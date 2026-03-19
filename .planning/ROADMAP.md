@@ -34,7 +34,7 @@
 | Phase | Plans | Status |
 |-------|-------|--------|
 | Phase 1: 数据结构 | 2/2 complete | Complete ✓ |
-| Phase 2 | 0/1 pending | Pending |
+| Phase 2 | 0/2 pending | Pending |
 | Phase 3 | 0/1 pending | Pending |
 | Phase 4 | 0/1 pending | Pending |
 
@@ -55,6 +55,10 @@
 - [ ] `test_moves.py` — 各棋子从初始局面走法数量正确（44 total）
 - [ ] `test_legal.py` —将军局面、被将军局面、将军禁止的走法被过滤
 - [ ] `test_rules.py` — 面对面规则生效
+
+**Plans:**
+- [ ] `02-01-PLAN.md` — moves.py + legal.py + rules.py + unit tests (Wave 1, 3 tasks, MOVE-01..07 + RULE-01..05)
+- [ ] `02-02-PLAN.md` — test_perft.py with CPW-verified reference values (Wave 2, 1 task, TEST-01)
 
 **Exit criteria:** 所有 13 个 MOVE/RULE 需求覆盖，Perft depth=1~3 通过
 
