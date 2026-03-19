@@ -49,6 +49,18 @@
 - **Learning**: 从零开始 — 不依赖预训练，完全在线学习
 - **Architecture**: 异构多智能体 — 每种棋子独立网络，协作决策
 
+## Current Milestone: v0.1 构建象棋引擎
+
+**Goal:** 实现完整的中国象棋规则引擎，支持合法走法生成、将军检测、胜负判定
+
+**Target features:**
+- 棋盘表示与棋子数据结构
+- 所有7种棋子的合法走法生成
+- 将军检测与应将逻辑
+- 胜负判定（将死、困毙、和棋规则）
+- 走法合法性校验API
+- 性能优化（每步<100ms）
+
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
