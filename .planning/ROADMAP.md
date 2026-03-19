@@ -24,8 +24,19 @@
 **Exit criteria:** 所有 5 个 DATA 需求覆盖，测试通过
 
 **Plans:**
-- [ ] `01-01-PLAN.md` — types.py + constants.py + their tests (Wave 1, DATA-01/02/03/05)
+- [x] `01-01-PLAN.md` — types.py + constants.py + their tests (Wave 1, DATA-01/02/03/05) ✓
 - [ ] `01-02-PLAN.md` — state.py + test_state.py + conftest.py + pyproject.toml (Wave 2, DATA-04)
+
+---
+
+## Phase Map
+
+| Phase | Plans | Status |
+|-------|-------|--------|
+| Phase 1: 数据结构 | 1/2 complete | Wave 1 done, Wave 2 pending |
+| Phase 2 | 0/1 pending | Pending |
+| Phase 3 | 0/1 pending | Pending |
+| Phase 4 | 0/1 pending | Pending |
 
 ---
 
@@ -117,4 +128,4 @@
 ---
 
 *Roadmap created: 2026-03-19*
-*Last updated: 2026-03-19 after Phase 1 plan creation*
+*Last updated: 2026-03-19 after Phase 1 plan 01-01 completion*
