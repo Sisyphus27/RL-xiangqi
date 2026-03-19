@@ -191,8 +191,8 @@ def gen_soldier(board: np.ndarray, from_sq: int, color: int) -> List[int]:
         if not belongs_to(target, color):
             moves.append(encode_move(from_sq, rc_to_sq(nr, nc), is_capture=target != 0))
     # Sideways moves only after crossing river
-    # Red: rows 5-9 are black's side; black: rows 0-4 are red's side
-    crossed = (color == +1 and fr >= 5) or (color == -1 and fr <= 4)
+    # Red crosses into rows 0-4 (black's home); black crosses into rows 5-9 (red's home)
+    crossed = (color == +1 and fr <= 4) or (color == -1 and fr >= 5)
     if crossed:
         for dc in (-1, +1):
             nc_s = fc + dc
