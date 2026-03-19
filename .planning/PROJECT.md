@@ -12,7 +12,7 @@
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Phase 1: 数据结构 (v0.1) — 棋盘表示 (DATA-01), Piece枚举 (DATA-02), 走法编码 (DATA-03), XiangqiState (DATA-04), FEN与边界掩码 (DATA-05) — 28 tests passing
 
 ### Active
 
