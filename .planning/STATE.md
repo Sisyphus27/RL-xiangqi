@@ -10,10 +10,21 @@ See: .planning/PROJECT.md (updated 2026-03-19)
 ## Current Position
 
 Milestone: v0.1 构建象棋引擎
-Phase: Not started (defining requirements)
+Phase: Roadmap ready (awaiting approval)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-19 — Milestone v0.1 started
+Status: Roadmap created — awaiting user approval
+Last activity: 2026-03-19 — Research complete, requirements defined, roadmap created
+
+Progress: [░░░░░░░░░░] 0%
+
+## Phase Structure
+
+| # | Phase | Requirements | Status |
+|---|-------|-------------|--------|
+| 1 | 数据结构 | DATA-01..05 | Pending |
+| 2 | 棋子走法与规则校验 | MOVE-01..07, RULE-01..06 | Pending |
+| 3 | 终局判定 | END-01..05 | Pending |
+| 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Pending |
 
 Progress: [░░░░░░░░░░] 0%
 

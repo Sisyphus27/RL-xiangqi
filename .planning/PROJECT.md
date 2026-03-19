@@ -51,7 +51,9 @@
 
 ## Current Milestone: v0.1 构建象棋引擎
 
-**Goal:** 实现完整的中国象棋规则引擎，支持合法走法生成、将军检测、胜负判定
+**Goal:** 实现完整的中国象棋规则引擎（纯 Python，无 UI、无 RL 接口）
+
+**Scope:** 棋盘表示、合法走法生成、将军检测、终局判定、API接口、测试
 
 **Target features:**
 - 棋盘表示与棋子数据结构
@@ -60,6 +62,27 @@
 - 胜负判定（将死、困毙、和棋规则）
 - 走法合法性校验API
 - 性能优化（每步<100ms）
+
+**Phase structure:**
+- Phase 1: 数据结构
+- Phase 2: 棋子走法与规则校验
+- Phase 3: 终局判定
+- Phase 4: API 接口与集成测试
+
+**Research outputs:**
+- `research/RULES.md` — 完整中国象棋规则（含边界情况）
+- `research/DATA_STRUCTURES.md` — 数据结构与算法设计
+- `research/RL_ENV.md` — RL 环境接口设计（供 v0.2 参考）
+- `research/LIBRARIES.md` — Python 象棋库与工具链
+
+## Milestones
+
+| Version | Status | Description |
+|---------|--------|-------------|
+| v0.1 | In Progress | 象棋引擎（纯规则，无UI/RL） |
+| v0.2 | — | RL 环境接口 |
+| v0.3 | — | PyQt6 UI |
+| v1.0 | — | AI 对弈（Alpha-Beta / MCTS） |
 
 ## Key Decisions
 
@@ -72,4 +95,4 @@
 | 桌面应用 | 本地训练需要计算资源，桌面更稳定 | — Pending |
 
 ---
-*Last updated: 2026-03-19 after initialization*
+*Last updated: 2026-03-19 after v0.1 milestone setup*
