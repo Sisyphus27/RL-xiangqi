@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-01-PLAN
-last_updated: "2026-03-19T15:40:39.704Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-19T16:16:53.701Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 100
 ---
 
@@ -59,6 +59,7 @@ Progress: [██████████] 100%
 
 *Updated after each plan completion*
 | Phase 01-data-structures P02 | 120 | 3 tasks | 4 files |
+| Phase 02 P02 | 25 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Recent decisions affecting current work:
 - [02-01]: Board-copy post-check for legal filtering (no incremental unmake)
 - [02-01]: Soldier crossing: red crosses at fr <= 4, black crosses at fr >= 5
 - [02-01]: Stalemate = loss in Xiangqi (困毙), not draw
+- [Phase 02-02]: Used CPW/Fairy-Stockfish perft values (44, 1,920, 79,666, 3,290,240) not the incorrect REQUIREMENTS.md values
+- [Phase 02-02]: Fixed elephant home half: red rows 5-9, black rows 0-4 (was inverted causing perft(1) to fail)
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None — Phase 1 data structures complete.
 
 ## Session Continuity
 
-Last session: 2026-03-19T15:40:39.701Z
-Stopped at: Completed 02-01-PLAN
+Last session: 2026-03-19T16:16:45.346Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
