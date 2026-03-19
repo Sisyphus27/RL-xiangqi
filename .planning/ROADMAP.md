@@ -23,6 +23,10 @@
 
 **Exit criteria:** 所有 5 个 DATA 需求覆盖，测试通过
 
+**Plans:**
+- [ ] `01-01-PLAN.md` — types.py + constants.py + their tests (Wave 1, DATA-01/02/03/05)
+- [ ] `01-02-PLAN.md` — state.py + test_state.py + conftest.py + pyproject.toml (Wave 2, DATA-04)
+
 ---
 
 ## Phase 2 — 棋子走法生成与规则校验
@@ -113,4 +117,4 @@
 ---
 
 *Roadmap created: 2026-03-19*
-*Last updated: 2026-03-19 after initial creation*
+*Last updated: 2026-03-19 after Phase 1 plan creation*
