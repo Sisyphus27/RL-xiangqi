@@ -1,8 +1,8 @@
 # Feature Research
 
-**Domain:** Heterogeneous Multi-Agent RL Chess System (Xiangqi / Chinese Chess)
+**Domain:** Chinese Chess (Xiangqi) Rule Engine v0.1
 **Researched:** 2026-03-19
-**Confidence:** MEDIUM-HIGH
+**Confidence:** HIGH (based on WXF official rules, academic research, and established engine implementations)
 
 ---
 
@@ -10,135 +10,156 @@
 
 ### Table Stakes (Users Expect These)
 
-These are the minimum required features. Missing any of them makes the product broken or unacceptable.
+Features users assume exist in any Xiangqi rule engine. Missing these = engine is unusable.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Complete Xiangqi rules engine | Any chess program must enforce legal moves; Xiangqi has unique rules (flying general, cannon capture, no jumping for horses/elephants, river restrictions, stalemate is a loss, no perpetual check) | HIGH | 7 piece types with distinct movement logic; flying general check and no-perpetual-check rules are non-trivial edge cases to detect |
-| Check detection and checkmate/stalemate judgment | Game cannot proceed without win/loss/draw detection | HIGH | Flying general rule adds a dimension not present in Western chess; stalemate is a loss (not draw) in Xiangqi — different from Western chess |
-| Legal move validation (UI side) | Users expect the board to reject illegal drags silently, not crash | MEDIUM | python-chess has no Xiangqi support; must implement from scratch or use pikafish/fairy-stockfish bindings |
-| Drag-and-drop piece interaction | Standard expectation for any desktop board game UI | MEDIUM | PyQt6 mouse event handling; need to highlight valid drop targets to guide players |
-| Visual board rendering with correct piece icons | The 9x10 intersection-based board (not squares) is visually distinct from Western chess | MEDIUM | Pieces sit on intersections, not inside squares; need custom SVG or image assets for Chinese piece characters |
-| AI responds with a move | Core product: the AI must move | HIGH | Entire RL pipeline must be functional before this works |
-| Game start / restart flow | Users expect a "new game" button | LOW | Simple state reset |
-| Turn management | Alternating red/black turns, with turn indicator | LOW | Must prevent user from moving opponent's pieces |
-| Move history display | Users need to review what happened; common in all chess UIs | MEDIUM | Can use a scrollable text log with algebraic-style notation for Xiangqi |
-| Model persistence (save/load) | Progress must survive app restarts; critical for online learning value prop | MEDIUM | Save after each game; PyTorch `torch.save` / `torch.load` with versioning |
+| **Board Representation** | Core data structure for all operations | LOW | 9x10 grid (90 intersections), FEN-like notation support |
+| **Piece Movement Generation** | Each piece has unique movement rules | MEDIUM | 7 piece types with distinct patterns |
+| **General (King) Movement** | Wazir (1-step orthogonal), palace-confined | LOW | Must include "Flying General" rule |
+| **Advisor Movement** | Ferz (1-step diagonal), palace-confined | LOW | Only 5 valid squares per side |
+| **Elephant Movement** | Alfil (2-step diagonal), river-bound | LOW | Blockable at "eye" position |
+| **Horse Movement** | Narrow knight (1 ortho + 1 diag outward) | MEDIUM | Blockable at "leg" position |
+| **Chariot Movement** | Rook (sliding orthogonal) | LOW | Standard sliding piece |
+| **Cannon Movement** | Hopper: slides non-capture, jumps to capture | MEDIUM | Must count exactly one screen for capture |
+| **Soldier Movement** | Forward 1; after river: +sideways | LOW | No backward movement ever |
+| **Move Validation** | Filter pseudo-legal to legal moves | MEDIUM | Must verify king safety after move |
+| **Check Detection** | Determine if General is under attack | MEDIUM | Required for legal move filtering |
+| **Checkmate Detection** | No legal moves to escape check | MEDIUM | Similar to Western chess |
+| **Stalemate Detection** | No legal moves, not in check | LOW | **Critical:** Stalemate = LOSS in Xiangqi |
+| **Flying General Rule** | Kings cannot face on same file | LOW | Immediate win/illegal position check |
+| **Game Over Detection** | Terminal position identification | MEDIUM | Checkmate, stalemate, or draw conditions |
 
 ### Differentiators (Competitive Advantage)
 
-These map directly to the core value proposition: observable AI improvement through online learning with a heterogeneous multi-agent architecture.
+Features that distinguish a high-quality engine from a basic one.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Heterogeneous agent architecture (per-piece-type networks) | The project's primary research differentiator; each piece type (General, Advisor, Elephant, Horse, Chariot, Cannon, Soldier) maintains its own policy network, exploiting the radically different move semantics per piece type | HIGH | 7 distinct network types; Chariot/Cannon/Soldier have very different action spaces; requires careful state representation per agent type |
-| Proposal + arbitration coordination mechanism | Candidate moves from all piece-type agents are scored and arbitrated by a global network, enabling emergent cooperative strategy beyond greedy per-piece decisions | HIGH | Arbitrator architecture choice is critical: attention-based (treating proposals as tokens) or a simple scoring network; needs careful design to avoid the arbitrator dominating learning |
-| Online learning during human play (real-time weight updates) | AI visibly improves across games played by the same user — the defining user experience | HIGH | Step-level lightweight updates (avoid freezing the UI) + end-of-game deep update batch; must run training in a background thread to keep UI responsive |
-| Mixed update strategy (per-step + end-of-game) | Per-step shaping rewards accelerate learning; end-of-game batch update provides stable gradient signal | HIGH | Balance is tricky: too much per-step updating causes instability; too little makes online learning imperceptible |
-| Shaped intermediate rewards (material capture, board control) | Sparse terminal rewards (win/loss only) make learning extremely slow; shaped rewards guide the agent toward meaningful positions faster | HIGH | Common shapes: piece-value delta on capture, center/river-crossing bonuses for soldiers, mobility (number of available moves). Must be calibrated to avoid reward hacking |
-| Observable AI skill progression (metrics dashboard) | Users must be able to see the AI getting stronger — this is the core experiential promise | MEDIUM | Show win rate over last N games, average game length trend, episode loss curve. A simple matplotlib panel embedded in PyQt6 or a separate TensorBoard view |
-| Apple Silicon MPS backend optimization | Enables the online training loop to be fast enough to run between/during moves on consumer hardware with no GPU | MEDIUM | PyTorch MPS backend; some ops fall back to CPU — identify and handle gracefully; MPS memory management differs from CUDA |
-| Zero prior knowledge (learns from scratch) | Validates that the RL system works without human-game datasets or opening books — a cleaner scientific demonstration | MEDIUM | No corpus needed; random initialization; implies the early games will be very weak (this should be communicated to users as "watching the AI learn") |
+| **Perpetual Check Detection** | WXF rules: 4 repetitions = loss | HIGH | Requires position history + move classification |
+| **Perpetual Chase Detection** | WXF rules: chasing unprotected piece = loss | HIGH | Most complex rule; many edge cases |
+| **Repetition Draw Detection** | Legal repetition = draw | MEDIUM | Position hashing with occurrence counting |
+| **50/60-Move Rule** | No capture/pawn advance = draw | LOW | Counter-based; 50 moves (WXF) or 60 plies (CXA) |
+| **Insufficient Material Detection** | Neither side can force checkmate | MEDIUM | Static evaluation of material combinations |
+| **Zobrist Hashing** | Fast position hashing for repetition | MEDIUM | Essential for performance at scale |
+| **Incremental Attack Updates** | Update attacked squares after each move | HIGH | Major performance optimization |
+| **Staged Move Generation** | Generate checks/captures first | MEDIUM | Alpha-beta search optimization |
+| **UCCI Protocol Support** | Standard engine communication | MEDIUM | Required for GUI integration |
+| **Move Annotation** | SAN-like notation for moves | LOW | Human-readable move recording |
+| **Game History / PGN** | Record and replay games | MEDIUM | WXF notation format |
+| **Position FEN Import/Export** | Standard position serialization | LOW | Essential for testing and debugging |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
+Features that seem useful but create problems or violate Xiangqi rules.
+
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Opening book / endgame tablebase | "The AI plays randomly in the opening" complaints | Contradicts the from-scratch learning premise; injecting hand-crafted knowledge pollutes the online learning experiment; creates complex initialization dependencies | Let the agent develop its own opening tendencies through repeated play; shape the experience narrative ("it's learning, not pre-programmed") |
-| PGN / game record import | Users want to feed the AI human games for faster learning | Breaks the zero-prior-knowledge constraint; introduces distribution shift between human-game data and self-play data; scope creep | Train purely from human vs. AI games; the AI's experience is the data |
-| Online multiplayer | Obvious extension request | Requires server infrastructure, authentication, matchmaking — an entirely different product; human vs. AI is the validated use case | Explicitly out of scope per PROJECT.md |
-| Stockfish / external engine integration for analysis | "Tell me if my move was good" coaching feature | Requires pikafish (Xiangqi UCI engine); adds a large dependency; shifts focus from RL learning to analysis tool; competing product | Offer a simple "replay this game" view showing what the AI would do now vs. what it did then — intrinsic analysis using the trained model itself |
-| Full MCTS search at inference time | "Make the AI stronger" | At online-learning scale on MPS hardware, adding MCTS at inference time makes the AI too slow to respond interactively; AlphaZero MCTS is designed for distributed training clusters | The heterogeneous proposal + arbitration mechanism IS the multi-agent equivalent of candidate selection; depth-1 look-ahead is acceptable for v1 |
-| Real-time visualization updating every step | Cool-looking training graphs updating live | Per-step UI refresh causes heavy thread contention between training loop and Qt event loop; small updates are not meaningful noise-to-signal | Update metrics at end-of-game (or every N games); use a background queue to pass metrics to the UI thread |
-| Mobile / web version | Broader reach | PyQt6 is desktop-only; MPS training requires macOS; porting is a full re-architecture | Explicitly out of scope per PROJECT.md |
-| Adjustable AI difficulty slider | Common in chess apps | Requires either multiple trained models or policy temperature tuning; interferes with a single online-learning model that is continuously improving | Communicate strength via the metrics dashboard; the "difficulty" is organic and observable |
-| Multi-game parallel self-play training | Faster learning | Requires parallel game environments and synchronous gradient accumulation; significant complexity for a single-machine MPS setup | Sequential games with experience replay buffer for replay diversity |
+| **Stalemate as Draw** | Western chess convention | Violates Xiangqi rules; stalemate is LOSS | Implement correct Xiangqi stalemate = loss |
+| **Simplified Repetition (3-fold draw)** | Western chess convention | Xiangqi has complex repetition rules with win/loss/draw outcomes | Implement full WXF repetition classification |
+| **Allow Illegal Moves** | "Training mode" idea | Corrupts game state, breaks RL training | Strict validation always; use "analysis mode" for exploration |
+| **Custom Piece Values** | "Balance the game" | Xiangqi has established balance; changes break standard play | Use standard piece values for RL rewards |
+| **Time Control in Engine** | "Complete game management" | Engine should be stateless; time belongs to UI/arbitrator | Keep engine focused on rules; UI handles time |
+| **Opening Book Integration** | "Better play from start" | Project goal is pure RL learning from zero | Defer to post-training; engine should be rule-only |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[Xiangqi Rules Engine]
-    └──requires──> [Legal move generation per piece type]
-                       └──requires──> [Board state representation (9x10 intersection model)]
-                                          └──requires──> [Flying general detection]
-                                          └──requires──> [No-perpetual-check detection]
+Board Representation
+    |--requires--> Piece Definitions
+    |                  |--requires--> Movement Patterns
+    |
+    |--requires--> Position Validation
+    |                  |--requires--> Flying General Check
+    |
+    |--requires--> Move Generation
+    |                   |--requires--> Pseudo-legal Generation
+    |                   |                  |--requires--> General Movement
+    |                   |                  |--requires--> Advisor Movement
+    |                   |                  |--requires--> Elephant Movement
+    |                   |                  |--requires--> Horse Movement
+    |                   |                  |--requires--> Chariot Movement
+    |                   |                  |--requires--> Cannon Movement
+    |                   |                  |--requires--> Soldier Movement
+    |                   |
+    |                   |--requires--> Legal Move Filtering
+    |                                  |--requires--> Check Detection
+    |                                                 |--requires--> Attack Detection
 
-[Heterogeneous Agent Networks]
-    └──requires──> [Board state representation]
-    └──requires──> [Per-piece-type action space definition]
-                       └──requires──> [Legal move generation per piece type]
+Check Detection
+    |--requires--> Sliding Piece Attacks (Chariot, Cannon)
+    |--requires--> Leaper Attacks (Horse, Elephant)
+    |--requires--> Hopper Attacks (Cannon capture)
 
-[Proposal + Arbitration Mechanism]
-    └──requires──> [Heterogeneous Agent Networks]
-    └──requires──> [Legal move generation per piece type]  (arbitrator must only select legal moves)
+Checkmate Detection
+    |--requires--> Legal Move Generation
+                       |--requires--> Check Detection
 
-[Online Learning Loop]
-    └──requires──> [Proposal + Arbitration Mechanism]
-    └──requires──> [Shaped Intermediate Rewards]
-                       └──requires──> [Board state representation]
-    └──requires──> [Model Persistence]
+Stalemate Detection
+    |--requires--> Legal Move Generation
 
-[PyQt6 UI — Board + Interaction]
-    └──requires──> [Board state representation]
-    └──requires──> [Legal move validation]
+Repetition Detection
+    |--requires--> Zobrist Hashing
+    |                  |--requires--> Board Representation
+    |--requires--> Position History
 
-[Drag-and-Drop + Legal Move Highlighting]
-    └──requires──> [PyQt6 UI — Board + Interaction]
-    └──requires──> [Legal move generation per piece type]
+Perpetual Check/Chase Detection
+    |--requires--> Repetition Detection
+                       |--requires--> Move Nature Classification
+                                          |--requires--> Check Detection
+                                          |--requires--> Chase Detection
 
-[Observable Metrics Dashboard]
-    └──requires──> [Online Learning Loop]  (needs metrics to display)
-    └──enhances──> [Online Learning Loop]  (makes the value prop visible)
-
-[MPS Backend Optimization]
-    └──enhances──> [Online Learning Loop]  (makes per-step training feasible on Apple Silicon)
-
-[Model Persistence]
-    └──requires──> [Online Learning Loop]  (nothing to save without training)
+Game Over Detection
+    |--requires--> Checkmate Detection
+    |--requires--> Stalemate Detection
+    |--requires--> Repetition Detection
+    |--requires--> Insufficient Material Detection
 ```
 
 ### Dependency Notes
 
-- **Xiangqi Rules Engine is the root dependency**: everything — UI, RL, agents — depends on a correct rule implementation. It must be built and fully tested before any other work begins.
-- **Board state representation blocks heterogeneous agents**: the representation must encode piece positions in a form each agent network can consume (likely a multi-channel 9x10 tensor, one channel per piece type per side).
-- **Legal move generation per piece type is shared**: both the UI (for drag validation and highlighting) and the arbitration mechanism (to constrain legal proposals) depend on the same move generator. Build it once as a shared service.
-- **Online Learning Loop requires background threading**: the Qt event loop and the PyTorch training loop must not share the main thread. This is an architectural constraint, not just a feature dependency.
-- **Observable Metrics enhances the core value prop**: technically optional for v1 functionality, but critical for demonstrating the learning narrative to users. Treat as required for MVP.
+- **Legal Move Filtering requires Check Detection:** After making a pseudo-legal move, must verify own king is not in check
+- **Check Detection requires Attack Detection:** Must determine all squares attacked by opponent
+- **Perpetual Check/Chase requires Move Nature Classification:** Each move must be classified as check/chase/idle
+- **Cannon is unique:** Requires both sliding (non-capture) and hopper (capture) attack detection
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (v0.1)
 
-Minimum viable product to validate the core thesis: heterogeneous multi-agent online RL learns Xiangqi from scratch while playing against a human.
+Minimum viable rule engine for RL training to begin.
 
-- [ ] Complete Xiangqi rules engine with all 7 piece types — game cannot function without it
-- [ ] PyQt6 board UI with drag-and-drop, turn management, legal move highlighting — human interaction layer
-- [ ] Heterogeneous agent networks (7 piece-type networks + arbitrator) producing a move — the differentiating architecture
-- [ ] Proposal + arbitration mechanism selecting the AI's move — must work before any training can happen
-- [ ] Shaped intermediate rewards (capture delta + basic position score) — required for online learning to converge in reasonable time
-- [ ] Online learning loop: per-step lightweight update + end-of-game batch update — the core value proposition
-- [ ] MPS backend — the only GPU-like hardware available; CPU training will be too slow for per-step updates
-- [ ] Model save/load on game end — persistence required for observable improvement across sessions
-- [ ] Basic metrics panel (win rate over last N games, episode reward trend) — makes the learning observable; without this the core value prop is invisible to the user
+- [x] **Board Representation** — Foundation for all operations; 9x10 grid with piece placement
+- [x] **All 7 Piece Movement Rules** — Complete pseudo-legal move generation
+- [x] **Flying General Rule** — Critical Xiangqi-specific rule
+- [x] **Legal Move Validation** — Filter pseudo-legal to legal (king safety check)
+- [x] **Check Detection** — Determine if General is under attack
+- [x] **Checkmate Detection** — Terminal condition for game end
+- [x] **Stalemate Detection** — Terminal condition (LOSS for stalemated side)
+- [ ] **Basic Repetition Detection** — Detect 4-fold repetition (as draw for MVP)
+- [ ] **50-Move Rule** — Draw by no capture/pawn advance
 
-### Add After Validation (v1.x)
+### Add After Validation (v0.2)
 
-- [ ] Move history display — add once gameplay loop is stable; users will ask for it
-- [ ] Replay / game review using trained model — provides intrinsic analysis without needing Stockfish
-- [ ] Experience replay buffer for training stability — add when catastrophic forgetting becomes observable (it will)
-- [ ] Loss curve / gradient norm display — add when users or developers want deeper training insight
-- [ ] Piece-level contribution visualization (which agent proposed the winning move) — showcases the heterogeneous architecture to curious users
+Features to add once core engine is stable and RL training is working.
 
-### Future Consideration (v2+)
+- [ ] **Perpetual Check Detection (WXF)** — Loss for 4 consecutive checks
+- [ ] **Perpetual Chase Detection (WXF)** — Loss for 4 consecutive chases
+- [ ] **Zobrist Hashing** — Performance optimization for repetition detection
+- [ ] **Insufficient Material Detection** — Automatic draw for unwinnable positions
+- [ ] **UCCI Protocol Support** — Interface with standard Xiangqi GUIs
 
-- [ ] Self-play mode (AI vs. AI) for accelerated offline pre-training — defer until online learning convergence is validated
-- [ ] Policy temperature / exploration scheduling — defer until training stability is established
-- [ ] Curriculum learning (start with simplified board configurations) — defer; adds complexity before baselines are measured
-- [ ] Export trained model for benchmarking against pikafish/fairy-stockfish — defer until model is strong enough to be meaningful
+### Future Consideration (v1.0+)
+
+Features to defer until core RL system is proven.
+
+- [ ] **Full WXF Notation Support** — Complete game recording format
+- [ ] **Opening/Endgame Tablebase Detection** — For perfect play in known positions
+- [ ] **Transposition Table Integration** — For engine search (not needed for RL)
 
 ---
 
@@ -146,60 +167,152 @@ Minimum viable product to validate the core thesis: heterogeneous multi-agent on
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Xiangqi rules engine (full) | HIGH | HIGH | P1 |
-| PyQt6 board UI + drag-and-drop | HIGH | MEDIUM | P1 |
-| Heterogeneous agent networks (7 types) | HIGH | HIGH | P1 |
-| Proposal + arbitration mechanism | HIGH | HIGH | P1 |
-| Online learning loop (per-step + end-of-game) | HIGH | HIGH | P1 |
-| MPS backend | HIGH | MEDIUM | P1 |
-| Model save/load | HIGH | LOW | P1 |
-| Shaped intermediate rewards | HIGH | MEDIUM | P1 |
-| Observable metrics dashboard | HIGH | MEDIUM | P1 |
-| Turn management + legal move highlighting | MEDIUM | LOW | P1 |
-| Move history display | MEDIUM | LOW | P2 |
-| Experience replay buffer | MEDIUM | MEDIUM | P2 |
-| Replay / game review | MEDIUM | MEDIUM | P2 |
-| Piece-level contribution visualization | MEDIUM | MEDIUM | P2 |
-| Self-play offline pre-training | LOW | HIGH | P3 |
-| Curriculum learning | LOW | HIGH | P3 |
-| Stockfish integration for analysis | LOW | MEDIUM | P3 (anti-feature risk) |
+| Board Representation | HIGH | LOW | P1 |
+| Piece Movement (7 types) | HIGH | MEDIUM | P1 |
+| Flying General Rule | HIGH | LOW | P1 |
+| Legal Move Validation | HIGH | MEDIUM | P1 |
+| Check/Checkmate Detection | HIGH | MEDIUM | P1 |
+| Stalemate Detection | HIGH | LOW | P1 |
+| Basic Repetition (4-fold draw) | MEDIUM | MEDIUM | P1 |
+| 50-Move Rule | MEDIUM | LOW | P1 |
+| Perpetual Check (WXF) | HIGH | HIGH | P2 |
+| Perpetual Chase (WXF) | HIGH | HIGH | P2 |
+| Zobrist Hashing | MEDIUM | MEDIUM | P2 |
+| Insufficient Material | MEDIUM | MEDIUM | P2 |
+| UCCI Protocol | LOW | MEDIUM | P2 |
+| WXF Notation | LOW | MEDIUM | P3 |
 
-**Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
+**Priority Key:**
+- P1: Must have for v0.1 launch
+- P2: Should have for v0.2 (full rule compliance)
 - P3: Nice to have, future consideration
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | AlphaZero-style systems (e.g., Leela, pikafish) | Maia Chess (human-like) | This System |
-|---------|------------------------------------------------|------------------------|-------------|
-| Architecture | Single monolithic policy-value network | Single transformer network | 7 heterogeneous piece-type networks + arbitrator |
-| Training data source | Large-scale self-play (distributed) | 91M human games (Lichess) | Zero prior data; online human vs. AI games only |
-| Inference-time search | MCTS (required for strength) | None (network only) | None at v1; proposal + arbitration as substitute |
-| Online/incremental learning | No (offline batch training) | No (static trained model) | Yes — updates during each game |
-| Observable learning progression | No (static strength) | No (static model) | Yes — metrics dashboard tracks improvement |
-| Target hardware | TPU/GPU clusters | GPU server | MacBook Pro M1 Max MPS |
-| Xiangqi-specific | pikafish: yes. Most others: no | No | Yes |
+| Feature | xiangqi.js | Orange-Xiangqi | Fairy-Stockfish | Our Approach |
+|---------|------------|----------------|-----------------|--------------|
+| Move Generation | Complete | Complete | Complete | Complete (P1) |
+| Check/Checkmate | Complete | Complete | Complete | Complete (P1) |
+| Stalemate | Complete | Complete | Complete | Complete (P1) |
+| Flying General | Complete | Complete | Complete | Complete (P1) |
+| Perpetual Check | Partial | Complete | Partial | P2 (v0.2) |
+| Perpetual Chase | No | Complete | No | P2 (v0.2) |
+| Repetition Draw | Complete | Complete | Complete | P1 (basic) |
+| 50-Move Rule | Complete | Complete | Complete | P1 |
+| Zobrist Hashing | Yes | Yes | Yes | P2 |
+| UCCI Protocol | No | Yes | Yes | P2 |
+| NNUE Evaluation | No | Yes | Yes | N/A (RL project) |
+
+---
+
+## Piece Movement Reference
+
+### Movement Patterns by Piece Type
+
+| Piece | Betza Notation | Movement | Constraints |
+|-------|----------------|----------|-------------|
+| **General (将/帅)** | `W` | 1 step orthogonal | Palace only; Flying General rule |
+| **Advisor (士/仕)** | `F` | 1 step diagonal | Palace only |
+| **Elephant (象/相)** | `nA` | 2 steps diagonal | Cannot cross river; blocked at eye |
+| **Horse (马/傌)** | `n[WF]` | 1 ortho + 1 diag outward | Blocked at leg position |
+| **Chariot (车/俥)** | `R` | Sliding orthogonal | Cannot jump |
+| **Cannon (炮/砲)** | `pR` | Sliding orthogonal; hopper capture | Capture needs exactly 1 screen |
+| **Soldier (卒/兵)** | `fW` / `fWsW` | Forward 1; +sideways after river | Never backward |
+
+### Special Rule Details
+
+**Flying General (对将):**
+- If two Generals face each other on same file with no intervening pieces
+- Either General can capture the other
+- Position is illegal if active player leaves kings facing after move
+- Some rules treat this as immediate win for player who exposes the facing
+
+**Cannon Capture Algorithm:**
+```
+For each orthogonal direction:
+    screen_found = false
+    for each square along ray:
+        if not screen_found:
+            if square has piece:
+                screen_found = true  # Found the screen
+        else:
+            if square has enemy piece:
+                add to capture list
+            break  # Blocked after first piece past screen
+```
+
+**Horse Blocking (拐马脚):**
+- Horse moves 1 orthogonal then 1 diagonal outward
+- If the orthogonal "leg" square is occupied, horse cannot move in that direction
+- 8 potential destinations, each with unique leg position
+
+**Elephant Blocking (塞象眼):**
+- Elephant moves exactly 2 diagonal squares
+- The intermediate "eye" square must be empty
+- Cannot cross river (stays on own side)
+
+---
+
+## Rule Engine Complexity Analysis
+
+### Implementation Difficulty by Component
+
+| Component | Lines of Code (est.) | Algorithm Complexity | Testing Complexity |
+|-----------|---------------------|---------------------|-------------------|
+| Board Representation | 50-100 | LOW | LOW |
+| Piece Movement | 200-300 | MEDIUM | MEDIUM |
+| Attack Detection | 150-200 | MEDIUM | HIGH |
+| Legal Move Filter | 50-100 | LOW | MEDIUM |
+| Check/Checkmate | 100-150 | MEDIUM | HIGH |
+| Stalemate | 30-50 | LOW | MEDIUM |
+| Flying General | 30-50 | LOW | MEDIUM |
+| Repetition (basic) | 100-150 | MEDIUM | HIGH |
+| 50-Move Rule | 20-30 | LOW | LOW |
+| Perpetual Check (WXF) | 200-300 | HIGH | VERY HIGH |
+| Perpetual Chase (WXF) | 300-500 | VERY HIGH | VERY HIGH |
+| Zobrist Hashing | 50-100 | MEDIUM | MEDIUM |
+
+### Critical Testing Scenarios
+
+1. **Pin Detection:** Piece pinned to king cannot move (would expose king)
+2. **Discovered Check:** Moving a piece reveals check on opponent king
+3. **Double Check:** King attacked by two pieces simultaneously
+4. **Cannon Screen Changes:** Moving piece affects cannon's capture ability
+5. **River Crossing:** Soldier gains sideways movement exactly on river crossing
+6. **Palace Corners:** Advisor and General corner cases
+7. **Flying General:** All scenarios of king facing detection
+
+---
+
+## Draw Rules Summary
+
+| Rule | Trigger | Result | Complexity |
+|------|---------|--------|------------|
+| **Repetition Draw** | Same position occurs 4 times with same player to move | Draw | MEDIUM |
+| **Perpetual Check** | One player checks 4+ times consecutively | Loss for checking player | HIGH |
+| **Perpetual Chase** | One player chases same unprotected piece 4+ times | Loss for chasing player | HIGH |
+| **50-Move Rule** | 50 moves without pawn advance or capture | Draw | LOW |
+| **Insufficient Material** | Neither side can force checkmate | Draw | MEDIUM |
+| **Mutual Check/Chase** | Both players violate rules equally | Draw | HIGH |
+
+**Key Insight:** Xiangqi repetition rules are asymmetric — the same position repeating can result in win, loss, or draw depending on the *nature* of the moves being repeated.
 
 ---
 
 ## Sources
 
-- arXiv:2509.19512 — Heterogeneous Multi-Agent Challenge (HeMARL)
-- arXiv:2304.09870 — Heterogeneous-Agent Reinforcement Learning
-- arXiv:2410.04865 — Mastering Chinese Chess AI (Xiangqi) Without Search
-- arXiv:2501.11818 — Group-Agent Reinforcement Learning with Heterogeneous Agents
-- IJCAI 2024 M2RL Framework: https://www.ijcai.org/proceedings/2024/1046
-- Chessformer (OpenReview 2025) — attention-based board token model
-- Xiangqi rules reference: standard rule documentation (HIGH confidence, stable)
-- MIT 2025 study: RL minimizes catastrophic forgetting vs. supervised fine-tuning
-- PyQt chess desktop patterns: PyQtChess, MzChess, CARA projects (HIGH confidence — directly observed codebases)
-- Dense reward signals for chess RL (arXiv 2025) — Stockfish-distilled dense rewards outperform sparse binary rewards
-- NeurIPS 2024 — Successor Features and representation collapse in RL
+- [Complete Implementation of WXF Chinese Chess Rules](https://arxiv.org/html/2412.17334v1) (arXiv:2412.17334, December 2024) — HIGH confidence
+- [The Rules of Xiangqi (Chinese Chess)](https://www.xqinenglish.com/index.php?option=com_content&view=article&id=923:the-rules-of-xiangqi-chinese-chess&catid=119&Itemid=569&lang=en) — HIGH confidence
+- [xiangqi.js GitHub Repository](https://github.com/lengyanyu258/xiangqi.js/) — MEDIUM confidence
+- [Orange-Xiangqi GitHub Repository](https://github.com/danieltan1517/orange-xiangqi) — MEDIUM confidence
+- [Xiangqi (Chinese Chess) — GNU XBoard Rules](https://www.gnu.org/software/xboard/whats_new/rules/Xiangqi.html) — HIGH confidence
+- [Xiangqi — PlayStrategy](https://playstrategy.org/variant/xiangqi) — MEDIUM confidence
+- [How to Play Chinese Chess (Xiangqi)](https://www.ymimports.com/pages/how-to-play-xiangqi-chinese-chess) — MEDIUM confidence
+- [Wikipedia — Xiangqi](https://en.wikipedia.org/wiki/Xiangqi) — MEDIUM confidence
 
 ---
 
-*Feature research for: Heterogeneous Multi-Agent RL Xiangqi System*
+*Feature research for: RL-Xiangqi v0.1 Rule Engine*
 *Researched: 2026-03-19*
