@@ -243,44 +243,44 @@ class TestGenElephant:
     """MOVE-06: Elephant (XIANG) diagonal 2-step, blocked by eye, cannot cross river."""
 
     def test_unblocked_elephant(self):
-        """Unblocked red elephant at (2,2) has 4 destinations (all in rows 0-4)."""
+        """Unblocked red elephant at (7,2) has 4 destinations (rows 5 and 9)."""
         board = np.zeros((ROWS, COLS), dtype=np.int8)
-        board[2, 2] = Piece.R_XIANG
-        sq = rc_to_sq(2, 2)
+        board[7, 2] = Piece.R_XIANG
+        sq = rc_to_sq(7, 2)
         moves = gen_elephant(board, sq, +1)
         assert len(moves) == 4
 
     def test_elephant_eye_blocked(self):
         """Elephant cannot move if eye (midpoint) is occupied."""
         board = np.zeros((ROWS, COLS), dtype=np.int8)
-        board[2, 2] = Piece.R_XIANG
-        board[1, 1] = Piece.R_BING  # eye blocked for diagonal to (0,0)
-        sq = rc_to_sq(2, 2)
+        board[7, 2] = Piece.R_XIANG
+        board[6, 1] = Piece.R_BING  # eye blocked for diagonal to (5,0)
+        sq = rc_to_sq(7, 2)
         moves = gen_elephant(board, sq, +1)
         destinations = {decode_move(m)[1] for m in moves}
-        assert rc_to_sq(0, 0) not in destinations  # blocked diagonal
+        assert rc_to_sq(5, 0) not in destinations  # blocked diagonal
         assert len(moves) == 3
 
     def test_elephant_cannot_cross_river(self):
-        """Red elephant destinations must all be rows 0-4 (own half)."""
+        """Red elephant destinations must all be rows 5-9 (own half)."""
         board = np.zeros((ROWS, COLS), dtype=np.int8)
-        board[3, 4] = Piece.R_XIANG  # row 3 is in black home (rows 0-4)
-        sq = rc_to_sq(3, 4)
+        board[7, 4] = Piece.R_XIANG  # row 7 is in red home (rows 5-9)
+        sq = rc_to_sq(7, 4)
         moves = gen_elephant(board, sq, +1)
         for m in moves:
             _, to_sq, _ = decode_move(m)
             tr, tc = divmod(to_sq, 9)
-            assert 0 <= tr <= 4  # red elephant stays on rows 0-4
+            assert 5 <= tr <= 9  # red elephant stays on rows 5-9
 
     def test_elephant_can_capture_on_own_side(self):
-        """Elephant can capture enemy piece on its own half."""
+        """Elephant can capture enemy piece on its own half (row 9 is valid for red)."""
         board = np.zeros((ROWS, COLS), dtype=np.int8)
-        board[2, 2] = Piece.R_XIANG
-        board[0, 0] = Piece.B_ZU  # enemy at diagonal destination (0,0)
-        sq = rc_to_sq(2, 2)
+        board[7, 2] = Piece.R_XIANG
+        board[9, 0] = Piece.B_ZU  # enemy at diagonal destination (9,0)
+        sq = rc_to_sq(7, 2)
         moves = gen_elephant(board, sq, +1)
         destinations = {decode_move(m)[1] for m in moves}
-        assert rc_to_sq(0, 0) in destinations
+        assert rc_to_sq(9, 0) in destinations
         captures = [m for m in moves if decode_move(m)[2]]
         assert len(captures) == 1
 

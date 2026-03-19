@@ -1,4 +1,6 @@
 """Tests for face-to-face rule and game result evaluation (RULE-05, RULE-06)."""
+from __future__ import annotations
+
 import numpy as np
 import pytest
 

@@ -1,4 +1,6 @@
 """Tests for legal move filtering, check detection, and move application (RULE-01..06)."""
+from __future__ import annotations
+
 import numpy as np
 import pytest
 
@@ -179,7 +181,7 @@ class TestIsLegalMove:
         state = make_state(+1, rc_to_sq(9, 3), rc_to_sq(0, 4),
                            extra_pieces={(5, 3): Piece.R_CHE, (0, 3): Piece.B_CHE})
         move = encode_move(rc_to_sq(5, 3), rc_to_sq(5, 4), is_capture=False)
-        assert is_legal_move(state, move) is False
+        assert is_legal_move(state, move) is False  # flying general: kings on same file
 
     def test_legal_move_no_check(self):
         """Move that does not leave king in check is legal."""
@@ -190,11 +192,11 @@ class TestIsLegalMove:
     def test_illegal_flying_general_violation(self):
         """Move that creates face-to-face generals is illegal."""
         # Red chariot at (1,3), red king at (9,4), black king at (0,4)
-        # After chariot captures black king: kings face each other on col 4
+        # After chariot moves to col 4: both kings on col 4, nothing between them
         state = make_state(+1, rc_to_sq(9, 4), rc_to_sq(0, 4),
-                           extra_pieces={(1, 3): Piece.R_CHE})
+                           extra_pieces={(1, 3): Piece.R_CHE, (0, 4): Piece.B_SHI})
         move = encode_move(rc_to_sq(1, 3), rc_to_sq(0, 4), is_capture=True)
-        assert is_legal_move(state, move) is False
+        assert is_legal_move(state, move) is False  # flying general: kings on same file
 
 
 class TestGenerateLegalMoves:
