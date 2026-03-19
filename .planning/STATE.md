@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 02 context gathered
-last_updated: "2026-03-19T11:35:20.361Z"
+stopped_at: Completed 02-01-PLAN
+last_updated: "2026-03-19T15:40:39.704Z"
 progress:
   total_phases: 2
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 100
 ---
 
@@ -20,19 +20,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 01 — data-structures (COMPLETE)
+**Current focus:** Phase 02 — move-generation
 
 ## Current Position
 
-Phase: 01 (data-structures) — COMPLETE
-Plan: 2 of 2 (all plans complete)
+Phase: 02 (move-generation) — EXECUTING
+Plan: 2 of 2
 
 ## Phase Structure
 
 | # | Phase | Requirements | Status |
 |---|-------|-------------|--------|
 | 1 | 数据结构 | DATA-01..05 | Complete |
-| 2 | 棋子走法与规则校验 | MOVE-01..07, RULE-01..06 | Pending |
+| 2 | 棋子走法与规则校验 | MOVE-01..07, RULE-01..06 | In Progress |
 | 3 | 终局判定 | END-01..05 | Pending |
 | 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Pending |
 
@@ -73,6 +73,9 @@ Recent decisions affecting current work:
 - [Init]: Phase granularity to be user-defined — roadmap deleted, awaiting milestone structure
 - [01-02]: XiangqiState includes king_positions dict for Phase 2 fast king lookup
 - [Phase 01-02]: XiangqiState includes king_positions dict for Phase 2 fast king lookup (researcher recommendation)
+- [02-01]: Board-copy post-check for legal filtering (no incremental unmake)
+- [02-01]: Soldier crossing: red crosses at fr <= 4, black crosses at fr >= 5
+- [02-01]: Stalemate = loss in Xiangqi (困毙), not draw
 
 ### Pending Todos
 
@@ -86,6 +89,6 @@ None — Phase 1 data structures complete.
 
 ## Session Continuity
 
-Last session: 2026-03-19T11:35:20.358Z
-Stopped at: Phase 02 context gathered
-Resume file: .planning/phases/02-move-generation/02-CONTEXT.md
+Last session: 2026-03-19T15:40:39.701Z
+Stopped at: Completed 02-01-PLAN
+Resume file: None
