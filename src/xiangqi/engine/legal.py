@@ -68,12 +68,12 @@ def is_in_check(state: XiangqiState, color: int) -> bool:
             nr += dr
             nc += dc
         if first_piece_sq is not None:
-            if first_piece_val == enemy * 5:   # chariot attacks on same line
+            if first_piece_val == enemy * 5:   # chariot attacks on same line (first piece is enemy chariot)
                 return True
-            if screen_count == 1 and second_piece_sq is not None:
+            if first_piece_val == enemy * 1:   # face-to-face general (first piece is enemy king)
+                return True
+            if second_piece_sq is not None:
                 if second_piece_val == enemy * 6:   # cannon with exactly 1 screen
-                    return True
-                if first_piece_val == enemy * 1:    # face-to-face general (no screen)
                     return True
 
     # 2. Horse (L-shape, leg must be empty)
@@ -95,9 +95,16 @@ def is_in_check(state: XiangqiState, color: int) -> bool:
                 return True
 
     # 3. Soldier: forward square only (adjacent row, same col)
-    srow = kr + (1 if color == +1 else -1)
+    # Enemy soldier attacks by advancing toward this king, so it comes FROM the
+    # opposite direction. Red king (+1) faces black soldiers advancing DOWN (+row),
+    # so the attacker is in the row ABOVE the king (kr-1). Black king (-1) faces
+    # red soldiers advancing UP (-row... wait: red advances +row), so attacker is
+    # at (kr+1). In short: enemy advances toward king, attacker row = kr - enemy_fwd.
+    # enemy == -1 (black) fwd = +1, attacker at kr-1 → srow = kr - 1 when color==+1
+    # enemy == +1 (red)   fwd = +1, attacker at kr+1 → srow = kr + 1 when color==-1
+    srow = kr + (-1 if color == +1 else +1)
     if 0 <= srow < ROWS:
-        if int(state.board[srow, kc]) == enemy * 7:  # soldier forward
+        if int(state.board[srow, kc]) == enemy * 7:  # soldier forward (toward king)
             return True
     # Sideways: only if soldier is across the river
     for dc in (-1, +1):
@@ -108,7 +115,7 @@ def is_in_check(state: XiangqiState, color: int) -> bool:
                 p = int(state.board[soldier_row, sc])
                 if p == enemy * 7:
                     # Soldier attacks sideways only if it is across the river
-                    if (enemy == +1 and soldier_row >= 5) or (enemy == -1 and soldier_row <= 4):
+                    if (enemy == +1 and soldier_row <= 4) or (enemy == -1 and soldier_row >= 5):
                         return True
 
     # 4. Advisor: adjacent diagonal within palace
@@ -170,10 +177,14 @@ def apply_move(state: XiangqiState, move: int) -> int:
     state.board[tr, tc] = np.int8(piece)
     state.board[fr, fc] = np.int8(0)
 
-    # Update king_positions if general moved
+    # Update king_positions if general moved or was captured
     pt = abs(piece)
     if pt == 1:  # general
         state.king_positions[state.turn] = to_sq
+    if captured != 0 and abs(captured) == 1:  # enemy general was captured
+        enemy = -state.turn  # color of the captured piece
+        # Remove the captured general from king_positions
+        state.king_positions.pop(enemy, None)
 
     # Update turn
     state.turn *= -1

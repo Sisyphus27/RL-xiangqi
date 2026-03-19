@@ -161,8 +161,8 @@ def gen_advisor(board: np.ndarray, from_sq: int, color: int) -> List[int]:
 def gen_elephant(board: np.ndarray, from_sq: int, color: int) -> List[int]:
     """Diagonal 2-step: eye midpoint must be empty; cannot cross river."""
     fr, fc = sq_to_rc(from_sq)
-    # Red elephant home half: rows 0-4; black elephant home half: rows 5-9
-    home_rows = range(0, 5) if color == +1 else range(5, 10)
+    # Red elephant home half: rows 5-9; black elephant home half: rows 0-4
+    home_rows = range(5, 10) if color == +1 else range(0, 5)
     moves: List[int] = []
     for dr, dc, er, ec in _ELEPHANT_EYE_DEST:
         nr, nc = fr + dr, fc + dc
