@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-19T16:38:03.929Z"
+stopped_at: Completed 02.1-PLAN.md
+last_updated: "2026-03-20T10:43:22.721Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_phases: 4
+  completed_phases: 3
+  total_plans: 6
+  completed_plans: 6
   percent: 100
 ---
 
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 02 — move-generation
+**Current focus:** Phase 02.1 — fix-stalemate-test
 
 ## Current Position
 
-Phase: 02 (move-generation) — EXECUTING
-Plan: 2 of 2
+Phase: 02.1 (fix-stalemate-test) — EXECUTING
+Plan: 1 of 1
 
 ## Phase Structure
 
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 *Updated after each plan completion*
 | Phase 01-data-structures P02 | 120 | 3 tasks | 4 files |
 | Phase 02 P02 | 25 | 1 tasks | 3 files |
+| Phase 02.1 P01 | 480 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [02-01]: Stalemate = loss in Xiangqi (困毙), not draw
 - [Phase 02-02]: Used CPW/Fairy-Stockfish perft values (44, 1,920, 79,666, 3,290,240) not the incorrect REQUIREMENTS.md values
 - [Phase 02-02]: Fixed elephant home half: red rows 5-9, black rows 0-4 (was inverted causing perft(1) to fail)
+- [Phase 02.1]: B_SHI (not B_ADVISOR) is the correct enum; B_ADVISOR was a plan naming error
+- [Phase 02.1]: Double-chariot checkmate: B_CHE at (0,4) checks king AND protects B_SHI at (8,4) via same-column geometry
+- [Phase 02.1]: R_SHI at (8,3)/(8,5) (not 9,3/9,5) blocks diagonal escapes; R_SHI at row 9 can capture B_SHI at (8,4) diagonally
 
 ### Pending Todos
 
@@ -92,6 +96,6 @@ None — Phase 1 data structures complete.
 
 ## Session Continuity
 
-Last session: 2026-03-19T16:16:45.346Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-20T10:43:22.719Z
+Stopped at: Completed 02.1-PLAN.md
 Resume file: None
