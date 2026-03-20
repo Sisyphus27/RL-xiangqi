@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-03-20T13:12:38.125Z"
+stopped_at: Phase 04 context gathered
+last_updated: "2026-03-20T14:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 8
   completed_plans: 7
-  percent: 100
+  percent: 80
 ---
 
 # Project State
@@ -20,12 +20,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 03 — endgame-detection
+**Current focus:** Phase 04 — API 接口与集成测试
+
+## Runtime Environment
+
+**CRITICAL: Always use conda environment `xqrl`.**
+
+All commands (python, pip, pytest, etc.) must run inside `conda activate xqrl`.
+Install missing packages with `pip install` inside that environment.
+**pyffish requires stockfish system library first** (brew install stockfish / apt install stockfish), then `pip install pyffish`.
 
 ## Current Position
 
-Phase: 03 (endgame-detection) — Complete
-Plan: 1 of 1
+Phase: 04 (API 接口与集成测试) — Context gathered, ready for planning
+Plan: 0 of 1
 
 ## Phase Structure
 
@@ -33,8 +41,10 @@ Plan: 1 of 1
 |---|-------|-------------|--------|
 | 1 | 数据结构 | DATA-01..05 | Complete |
 | 2 | 棋子走法与规则校验 | MOVE-01..07, RULE-01..06 | Complete |
-| 3 | 终局判定 | END-01..05 | Pending |
-| 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Pending |
+| 2.1 | Fix stalemate test | RULE-06 | Complete |
+| 2.2 | Tech debt cleanup | — | Complete |
+| 3 | 终局判定 | END-01..05 | Complete |
+| 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Context gathered |
 
 Progress: [██████████] 100%
 
@@ -91,19 +101,24 @@ Recent decisions affecting current work:
 - [Phase 03]: RepetitionState lives in engine.py (Phase 4), not XiangqiState — separation of concerns
 - [Phase 03]: Long check -> DRAW; Long chase -> chaser LOSES (per WXO rules)
 - [Phase 03]: enemy = -new_state.turn in _detect_chase; piece_color = 1 if piece>0 else -1 for gen_* calls
+- [Phase 04]: Engine 持有 XiangqiState，对外统一接口，FEN 在 Engine 类上（from_fen/to_fen）
+- [Phase 04]: apply() 委托 legal.apply_move，仅返回 captured int
+- [Phase 04]: undo() 增量记录元组，公开 API，空栈抛 IndexError
+- [Phase 04]: undo() 同时回退 RepetitionState（apply/undo 共同维护）
+- [Phase 04]: RepetitionState 完全封装于 Engine 内部，reset() 时重置
+- [Phase 04]: pyffish 不可用则 pytest.skip()，完全独立 test_pyffish.py，仅验证 perft(1) 44步
+- [Phase 04]: 非法操作（非法走法/FEN）抛 ValueError，undo 空栈抛 IndexError
 
 ### Pending Todos
 
-- Phase 2: implement move generation and legal move filtering
-- Phase 3: implement endgame detection (checkmate, stalemate, repetition)
 - Phase 4: API integration and pyffish validation
 
 ### Blockers/Concerns
 
-None — Phases 1 and 2 complete, ready for Phase 3 endgame detection.
+None — Phase 3 complete, Phase 4 context gathered, ready for planning.
 
 ## Session Continuity
 
-Last session: 2026-03-20T13:12:38.123Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: None
+Last session: 2026-03-20T14:00:00.000Z
+Stopped at: Phase 04 context gathered
+Resume file: .planning/phases/04-api-interface/04-CONTEXT.md

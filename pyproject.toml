@@ -11,6 +11,9 @@ dependencies = [
 dev = [
     "pytest>=8.0",
 ]
+# 交叉验证依赖：需要先安装 stockfish 系统库（brew install stockfish / apt install stockfish）
+# 再 pip install pyffish
+pyffish = ["pyffish"]
 
 [build-system]
 requires = ["hatchling"]
