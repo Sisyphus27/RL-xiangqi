@@ -38,7 +38,7 @@
 | Phase 3 | 0/1 pending | Pending |
 | Phase 4 | 0/1 pending | Pending |
 | Phase 2.1 | 1/1 planned | Planned |
-| Phase 2.2 | 0/1 pending | Pending |
+| Phase 2.2 | 1/1 planned | Planned |
 
 ---
 
@@ -63,7 +63,7 @@
 - [x] `02-02-PLAN.md` — test_perft.py with CPW-verified reference values (Wave 2, 1 task, TEST-01)
 - [x] `02-03-SUMMARY.md` — fix gen_soldier forward_dr direction + update soldier tests (gap closure, TEST-01)
 - [x] `02.1-PLAN.md` — redesign test_stalemate_also_loss board + verify RULE-06 checkmate (planned)
-- [ ] `02.2-PLAN.md` — Phase 2 tech debt cleanup (doc hygiene, test hardening)
+- [x] `02.2-PLAN.md` — Phase 2 tech debt cleanup (doc hygiene, test hardening)
 
 **Exit criteria:** 所有 13 个 MOVE/RULE 需求覆盖，Perft depth=1~3 通过
 
@@ -88,6 +88,9 @@
 **Goal:** Clean up documentation hygiene and harden test assertions from Phase 2.
 
 **Gap Closure:** Closes ROADMAP status, filename casing, commit hash doc errors, and test permissiveness
+
+**Plans:**
+- [x] `02.2-01-PLAN.md` — Rename SUMmary, fix commit hash, harden test_legal.py and test_perft.py (5 tasks)
 
 **Tasks:**
 - Fix `ROADMAP.md` Phase 2 status: "Complete ✓" → "Gaps Closed ✓" ✓ (done)
@@ -170,4 +173,4 @@
 ---
 
 *Roadmap created: 2026-03-19*
-*Last updated: 2026-03-19 after Phase 1 plan 01-02 completion*
+*Last updated: 2026-03-20 after Phase 2.2 plan 02.2-01 creation*
