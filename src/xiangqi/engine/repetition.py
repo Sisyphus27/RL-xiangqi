@@ -25,6 +25,53 @@ class RepetitionState:
     chase_seq: List[tuple[int, int]] = field(default_factory=list)  # [(att_sq, tgt_sq), ...]
     last_chasing_color: int = 0  # +1 red, -1 black, 0 = none
 
+    def update(self, prev_state: XiangqiState, move: int,
+               new_state: XiangqiState) -> None:
+        """Update perpetual-rule counters after a move is applied.
+
+        Call this AFTER apply_move() has flipped turn and updated zobrist_hash_history.
+        prev_state: board BEFORE the move (turn = mover's color)
+        new_state:  board AFTER the move  (turn = opponent's color)
+
+        Side effects: updates consecutive_check_count, chase_seq, last_chasing_color.
+        """
+        # The player who just moved is opposite of new_state.turn
+        mover = new_state.turn * -1
+
+        # ── Long check tracking ──────────────────────────────────────
+        # If mover's move just gave check (opponent now in check), increment counter.
+        # After apply_move(), new_state.turn is the NEXT player, so opponent = new_state.turn * -1 == mover.
+        if is_in_check(new_state, mover):
+            self.consecutive_check_count += 1
+        else:
+            self.consecutive_check_count = 0
+
+        # ── Long chase tracking ──────────────────────────────────────
+        chase = _detect_chase(prev_state, move, new_state, mover)
+        if chase is None:
+            # Non-chase move: reset sequence (opponent interrupted)
+            self.chase_seq = []
+            self.last_chasing_color = 0
+        else:
+            att_sq, tgt_sq = chase
+            opponent = -mover
+            gives_check = is_in_check(new_state, opponent)
+            # Capture detection: if tgt_sq is now empty, the target piece was captured
+            tr, tc = divmod(tgt_sq, 9)
+            captured = int(new_state.board[tr, tc]) == 0
+            # New square: has the chasing piece (att_sq) never appeared in the current chase seq?
+            chase_sq = {sq for _, sq in self.chase_seq}
+            is_new = att_sq not in chase_sq
+            meaningful = gives_check or captured or is_new
+
+            if meaningful:
+                # Meaningful progress: break old sequence, start new one
+                self.chase_seq = [(att_sq, tgt_sq)]
+            else:
+                # Same (att_sq, tgt_sq) pair: extend sequence
+                self.chase_seq.append((att_sq, tgt_sq))
+            self.last_chasing_color = mover
+
     def reset(self) -> None:
         """Reset all counters (for game restart)."""
         self.consecutive_check_count = 0
