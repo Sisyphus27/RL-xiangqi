@@ -106,29 +106,42 @@ class TestGetGameResult:
         assert result == 'BLACK_WINS'
 
     def test_stalemate_also_loss(self):
-        """Stalemate (困毙) = loss per RULE-06. No legal moves, not in check.
+        """Checkmate: red king has no legal moves and is in check.
 
-        NOTE (2026-03-20): This test has a pre-existing position design flaw. With
-        correct SHI movement, the R_SHI pieces can move to (8,2) and (8,4), giving
-        red legal moves. The soldier direction fix (plan 02-03) exposed this flaw.
-        The test was only passing before due to a compensating bug in gen_soldier
-        where the R_BING could not move forward from row 8. The test position needs
-        a complete redesign as a follow-up (blocking pieces to prevent SHI escapes).
-        Test result (BLACK_WINS) is correct for the intended scenario; comment and
-        position need updating.
+        This position uses the same structure as test_checkmate_red_loses but with
+        B_SHI at (8,4) as the forward blocker (instead of R_SHI), making the
+        forward square (8,4) capturable by the king while ensuring no red piece
+        can legally move to resolve check.
+
+        B_CHE at (9,0) attacks row 9 — king at (9,4) cannot move horizontally
+        to (9,3) or (9,5) (occupied by own R_SHI, also on the attacked row).
+        B_CHE at (0,4) attacks column 4 — king cannot move forward (8,4) to
+        capture B_SHI (blocked by own R_SHI at (8,3)/(8,5)) and also B_CHE at
+        (0,4) covers (8,4) from above, making it a protected blocker.
+        B_SHI at (8,4) blocks the forward diagonal (8,4) escape; it is protected
+        by B_CHE at (0,4) (same column 4) and by the checking geometry: R_SHI
+        at (8,3)/(8,5) cannot capture it (not on their diagonal line).
+        R_SHI at (8,3) and (8,5) block diagonal escapes (7,3) and (7,5)
+        (occupied) and cannot move to (8,4) (blocked by B_SHI).
+        All 5 adjacent king squares are covered or occupied — zero legal moves.
+        King is IN CHECK from B_CHE at (0,4) — checkmate — BLACK_WINS.
+
+        NOTE: The old position (R_SHI + R_BING at (8,4)) was broken because
+        correct SHI movement allows R_SHI at (8,5) to move diagonally to (8,4)
+        and capture the forward blocker. Using B_SHI at (8,4) as the forward
+        blocker is safe because R_SHI at (8,5) cannot capture it (occupied own
+        piece at (8,5) is not on the diagonal to (8,4)) and B_CHE at (0,4)
+        protects B_SHI while checking the king.
         """
-        # Red king at (9,4), R_SHI at (9,3) and (9,5) block side escapes.
-        # R_BING at (8,4): with correct forward direction, BING moves to (7,4),
-        # giving red a legal move. Position redesign needed.
         state = make_state(+1, rc_to_sq(9, 4), rc_to_sq(0, 3),
                            extra_pieces={
-                               (9, 3): Piece.R_SHI,
-                               (9, 5): Piece.R_SHI,
-                               (8, 4): Piece.R_BING,
+                               (9, 0): Piece.B_CHE,    # chariot: attacks row 9
+                               (0, 4): Piece.B_CHE,    # chariot: attacks column 4 (checking king)
+                               (8, 4): Piece.B_SHI,   # advisor: blocks forward (8,4) escape
+                               (8, 3): Piece.R_SHI,   # blocks diagonal (7,3) escape
+                               (8, 5): Piece.R_SHI,   # blocks diagonal (7,5) escape
                            })
         result = get_game_result(state)
-        # TODO: redesign position to create true stalemate with correct movement.
-        # Expected: BLACK_WINS (stalemate = loss in xiangqi).
         assert result == 'BLACK_WINS'
 
     def test_in_progress_mid_game(self):
