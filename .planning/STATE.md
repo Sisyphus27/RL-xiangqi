@@ -4,13 +4,13 @@ milestone: v0.1
 milestone_name: milestone
 status: unknown
 stopped_at: Phase 04 context gathered
-last_updated: "2026-03-20T14:00:00.000Z"
+last_updated: "2026-03-20T14:51:37.050Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 4
-  total_plans: 8
+  total_plans: 10
   completed_plans: 7
-  percent: 80
+  percent: 100
 ---
 
 # Project State
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 04 — API 接口与集成测试
+**Current focus:** Phase 04 — api-interface
 
 ## Runtime Environment
 
@@ -32,8 +32,8 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 04 (API 接口与集成测试) — Context gathered, ready for planning
-Plan: 0 of 1
+Phase: 04 (api-interface) — PLAN 1 OF 2 COMPLETE
+Plan: 2 of 2
 
 ## Phase Structure
 
@@ -44,7 +44,7 @@ Plan: 0 of 1
 | 2.1 | Fix stalemate test | RULE-06 | Complete |
 | 2.2 | Tech debt cleanup | — | Complete |
 | 3 | 终局判定 | END-01..05 | Complete |
-| 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Context gathered |
+| 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Plan 1 complete, plan 2 pending |
 
 Progress: [██████████] 100%
 
@@ -73,6 +73,7 @@ Progress: [██████████] 100%
 | Phase 02.1 P01 | 480 | 2 tasks | 1 files |
 | Phase 02.2 P01 | 180 | 4 tasks | 4 files |
 | Phase 03 P01 | 65 | 7 tasks | 8 files |
+| Phase 04 P01 | 523 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,10 @@ Recent decisions affecting current work:
 - [Phase 04]: RepetitionState 完全封装于 Engine 内部，reset() 时重置
 - [Phase 04]: pyffish 不可用则 pytest.skip()，完全独立 test_pyffish.py，仅验证 perft(1) 44步
 - [Phase 04]: 非法操作（非法走法/FEN）抛 ValueError，undo 空栈抛 IndexError
+- [Phase 04-01]: object.__setattr__(self, '_field', val) pattern for private dataclass fields
+- [Phase 04-01]: is_legal_move() now rejects moves where source piece doesn't belong to mover (Rule 1 bug fix)
+- [Phase 04-01]: engine.apply() adds ownership validation before delegating to is_legal_move()
+- [Phase 04-01]: stalemate test board corrected: B_CHE at (0,4) needed to block red king diagonal escape to (8,4)
 
 ### Pending Todos
 
@@ -119,6 +124,6 @@ None — Phase 3 complete, Phase 4 context gathered, ready for planning.
 
 ## Session Continuity
 
-Last session: 2026-03-20T14:00:00.000Z
-Stopped at: Phase 04 context gathered
+Last session: 2026-03-20T14:53:00.000Z
+Stopped at: Phase 04-01 plan complete, 3/3 tasks committed
 Resume file: .planning/phases/04-api-interface/04-CONTEXT.md

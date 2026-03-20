@@ -123,15 +123,15 @@
 | END-03 | perpetual check draw | Phase 3 | [ ] |
 | END-04 | repetition draw | Phase 3 | [ ] |
 | END-05 | 60-move rule (opt) | Phase 3 | [ ] |
-| API-01 | XiangqiEngine class | Phase 4 | [ ] |
-| API-02 | state update correctness | Phase 4 | [ ] |
-| API-03 | FEN parse/export | Phase 4 | [ ] |
+| API-01 | XiangqiEngine class | Phase 4 | [x] |
+| API-02 | state update correctness | Phase 4 | [x] |
+| API-03 | FEN parse/export | Phase 4 | [x] |
 | API-04 | performance targets | Phase 4 | [ ] |
 | TEST-02 | pyffish cross-validate | Phase 4 | [ ] |
 | TEST-03 | boundary positions | Phase 4 | [ ] |
 | TEST-04 | special rules tests | Phase 4 | [ ] |
 
-**Coverage:** 18/31 satisfied
+**Coverage:** 21/31 satisfied
 
 ---
 

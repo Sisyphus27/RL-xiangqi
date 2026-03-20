@@ -36,7 +36,7 @@
 | Phase 1: 数据结构 | 2/2 complete | Complete ✓ |
 | Phase 2 | 3/3 complete | Gaps Closed ✓ |
 | Phase 3 | 1/1 complete | Complete ✓ |
-| Phase 4 | 0/2 planned | Pending |
+| Phase 4 | 1/2 complete | Executing |
 | Phase 2.1 | 1/1 planned | Planned |
 | Phase 2.2 | 1/1 complete | Complete ✓ |
 
@@ -147,7 +147,7 @@
 **Exit criteria:** 引擎通过全部测试，可作为独立模块使用
 
 **Plans:**
-- [ ] `04-01-PLAN.md` — engine.py + RepetitionState.copy() + test_api.py (Wave 1, API-01/02/03)
+- [x] `04-01-PLAN.md` — engine.py + RepetitionState.copy() + test_api.py (Wave 1, API-01/02/03)
 - [ ] `04-02-PLAN.md` — test_perft_engine.py + test_pyffish.py (Wave 2, API-04, TEST-01/02)
 
 ---
@@ -179,4 +179,4 @@
 ---
 
 *Roadmap created: 2026-03-19*
-*Last updated: 2026-03-20 after Phase 04 API interface plan completion*
+*Last updated: 2026-03-20 after Phase 04-01 plan execution (engine.py, test_api.py complete)*
