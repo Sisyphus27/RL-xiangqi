@@ -38,7 +38,7 @@
 | Phase 3 | 0/1 pending | Pending |
 | Phase 4 | 0/1 pending | Pending |
 | Phase 2.1 | 1/1 planned | Planned |
-| Phase 2.2 | 1/1 planned | Planned |
+| Phase 2.2 | 1/1 complete | Complete ✓ |
 
 ---
 

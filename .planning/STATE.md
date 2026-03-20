@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 02.2 context gathered
-last_updated: "2026-03-20T11:04:13.575Z"
+stopped_at: Completed 02.2-tech-debt-cleanup 02.2-01 plan
+last_updated: "2026-03-20T11:17:35.588Z"
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 6
-  completed_plans: 6
+  completed_phases: 4
+  total_plans: 7
+  completed_plans: 7
   percent: 100
 ---
 
@@ -20,11 +20,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 02.1 — fix-stalemate-test
+**Current focus:** Phase 03 — endgame-detection
 
 ## Current Position
 
-Phase: 02.1 (fix-stalemate-test) — EXECUTING
+Phase: 02.2 (tech-debt-cleanup) — EXECUTING
 Plan: 1 of 1
 
 ## Phase Structure
@@ -32,7 +32,7 @@ Plan: 1 of 1
 | # | Phase | Requirements | Status |
 |---|-------|-------------|--------|
 | 1 | 数据结构 | DATA-01..05 | Complete |
-| 2 | 棋子走法与规则校验 | MOVE-01..07, RULE-01..06 | In Progress |
+| 2 | 棋子走法与规则校验 | MOVE-01..07, RULE-01..06 | Complete |
 | 3 | 终局判定 | END-01..05 | Pending |
 | 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Pending |
 
@@ -61,6 +61,7 @@ Progress: [██████████] 100%
 | Phase 01-data-structures P02 | 120 | 3 tasks | 4 files |
 | Phase 02 P02 | 25 | 1 tasks | 3 files |
 | Phase 02.1 P01 | 480 | 2 tasks | 1 files |
+| Phase 02.2 P01 | 180 | 4 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ Recent decisions affecting current work:
 - [Phase 02.1]: B_SHI (not B_ADVISOR) is the correct enum; B_ADVISOR was a plan naming error
 - [Phase 02.1]: Double-chariot checkmate: B_CHE at (0,4) checks king AND protects B_SHI at (8,4) via same-column geometry
 - [Phase 02.1]: R_SHI at (8,3)/(8,5) (not 9,3/9,5) blocks diagonal escapes; R_SHI at row 9 can capture B_SHI at (8,4) diagonally
+- [Phase 02.2]: Strict equality (==44) over permissive lower-bound (>=40) for starting position legal move count
+- [Phase 02.2]: Per-child CPW assertions catch regressions in individual depth-1 move subtree counts, not just total
 
 ### Pending Todos
 
@@ -92,10 +95,10 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-None — Phase 1 data structures complete.
+None — Phases 1 and 2 complete, ready for Phase 3 endgame detection.
 
 ## Session Continuity
 
-Last session: 2026-03-20T11:04:13.572Z
-Stopped at: Phase 02.2 context gathered
-Resume file: .planning/phases/02.2-tech-debt-cleanup/02.2-CONTEXT.md
+Last session: 2026-03-20T11:17:24.294Z
+Stopped at: Completed 02.2-tech-debt-cleanup 02.2-01 plan
+Resume file: None
