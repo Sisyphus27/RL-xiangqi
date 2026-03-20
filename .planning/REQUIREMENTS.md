@@ -97,7 +97,41 @@
 
 ## Traceability
 
-待 Roadmap 创建后填充。
+| REQ-ID | Description | Phase | Status |
+|--------|-------------|-------|--------|
+| DATA-01 | board ndarray(10,9) | Phase 1 | [x] |
+| DATA-02 | Piece IntEnum | Phase 1 | [x] |
+| DATA-03 | Move 16-bit encoding | Phase 1 | [x] |
+| DATA-04 | XiangqiState dataclass | Phase 1 | [x] |
+| DATA-05 | STARTING_FEN | Phase 1 | [x] |
+| MOVE-01 | General move gen | Phase 2 | [x] |
+| MOVE-02 | Chariot move gen | Phase 2 | [x] |
+| MOVE-03 | Horse move gen | Phase 2 | [x] |
+| MOVE-04 | Cannon move gen | Phase 2 | [x] |
+| MOVE-05 | Advisor move gen | Phase 2 | [x] |
+| MOVE-06 | Elephant move gen | Phase 2 | [x] |
+| MOVE-07 | Soldier move gen | Phase 2 | [x] |
+| RULE-01 | is_legal_move | Phase 2 | [x] |
+| RULE-02 | generate_legal_moves | Phase 2 | [x] |
+| RULE-03 | is_in_check | Phase 2 | [x] |
+| RULE-04 | no self-check moves | Phase 2 | [x] |
+| RULE-05 | face-to-face rule | Phase 2 | [x] |
+| RULE-06 | get_game_result | Phase 2 | [x] |
+| TEST-01 | Perft depth 1-3 | Phase 2 | [x] |
+| END-01 | checkmate detection | Phase 3 | [ ] |
+| END-02 | stalemate detection | Phase 3 | [ ] |
+| END-03 | perpetual check draw | Phase 3 | [ ] |
+| END-04 | repetition draw | Phase 3 | [ ] |
+| END-05 | 60-move rule (opt) | Phase 3 | [ ] |
+| API-01 | XiangqiEngine class | Phase 4 | [ ] |
+| API-02 | state update correctness | Phase 4 | [ ] |
+| API-03 | FEN parse/export | Phase 4 | [ ] |
+| API-04 | performance targets | Phase 4 | [ ] |
+| TEST-02 | pyffish cross-validate | Phase 4 | [ ] |
+| TEST-03 | boundary positions | Phase 4 | [ ] |
+| TEST-04 | special rules tests | Phase 4 | [ ] |
+
+**Coverage:** 18/31 satisfied
 
 ---
 

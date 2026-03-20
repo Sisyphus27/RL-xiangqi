@@ -34,9 +34,11 @@
 | Phase | Plans | Status |
 |-------|-------|--------|
 | Phase 1: 数据结构 | 2/2 complete | Complete ✓ |
-| Phase 2 | 3/3 complete | Complete ✓ |
+| Phase 2 | 3/3 complete | Gaps Closed ✓ |
 | Phase 3 | 0/1 pending | Pending |
 | Phase 4 | 0/1 pending | Pending |
+| Phase 2.1 | 0/1 pending | Pending |
+| Phase 2.2 | 0/1 pending | Pending |
 
 ---
 
@@ -57,11 +59,45 @@
 - [ ] `test_rules.py` — 面对面规则生效
 
 **Plans:**
-- [ ] `02-01-PLAN.md` — moves.py + legal.py + rules.py + unit tests (Wave 1, 3 tasks, MOVE-01..07 + RULE-01..05)
+- [x] `02-01-PLAN.md` — moves.py + legal.py + rules.py + unit tests (Wave 1, 3 tasks, MOVE-01..07 + RULE-01..05)
 - [x] `02-02-PLAN.md` — test_perft.py with CPW-verified reference values (Wave 2, 1 task, TEST-01)
-- [ ] `02-03-PLAN.md` — fix gen_soldier forward_dr direction + update soldier tests (gap closure, TEST-01)
+- [x] `02-03-SUMMARY.md` — fix gen_soldier forward_dr direction + update soldier tests (gap closure, TEST-01)
+- [ ] `02.1-PLAN.md` — redesign test_stalemate_also_loss board + update RULE-06 TEST-01 checkbox
+- [ ] `02.2-PLAN.md` — Phase 2 tech debt cleanup (doc hygiene, test hardening)
 
 **Exit criteria:** 所有 13 个 MOVE/RULE 需求覆盖，Perft depth=1~3 通过
+
+---
+
+## Phase 2.1 — Fix Stalemate Test + TEST-01 Checkbox (Gap Closure)
+
+**Goal:** Close remaining v0.1 blocking gap — redesign `test_stalemate_also_loss` board position so red genuinely has no legal moves (no longer relies on the soldier direction bug). Update TEST-01 checkbox.
+
+**Gap Closure:** Closes audit finding `test_stalemate_also_loss` (RULE-06 partial) + TEST-01 checkbox
+
+**Tasks:**
+- Redesign stalemate test board: place pieces so red general has no legal moves and is in check (checkmate = BLACK_WINS)
+- Verify test passes with corrected board
+- Update REQUIREMENTS.md TEST-01 checkbox: `[ ]` → `[x]`
+
+**Exit criteria:** 102/102 tests pass, TEST-01 checkbox marked `[x]`
+
+---
+
+## Phase 2.2 — Phase 2 Tech Debt Cleanup (Gap Closure)
+
+**Goal:** Clean up documentation hygiene and harden test assertions from Phase 2.
+
+**Gap Closure:** Closes ROADMAP status, filename casing, commit hash doc errors, and test permissiveness
+
+**Tasks:**
+- Fix `ROADMAP.md` Phase 2 status: "Complete ✓" → "Gaps Closed ✓" ✓ (done)
+- Rename `02-01-SUMmary.md` → `02-01-SUMMARY.md` (fix capital M)
+- Fix `01-01-SUMMARY.md` commit hash: `e8bbb55` → `ed8bb55`
+- Harden `test_starting_position_legal_moves`: `>= 40` → `== 44`
+- Harden `test_perft_divide_depth_1`: add per-child CPW reference value assertions
+
+**Exit criteria:** All doc issues resolved, tests strictly assert correct values
 
 ---
 
@@ -114,6 +150,8 @@
 |-------------|-------|
 | DATA-01..05 | Phase 1 |
 | MOVE-01..07, RULE-01..06 | Phase 2 |
+| TEST-01 checkbox, RULE-06 (stalemate) | Phase 2.1 |
+| Phase 2 doc hygiene, test hardening | Phase 2.2 |
 | END-01..05 | Phase 3 |
 | API-01..04 | Phase 4 |
 | TEST-01..04 | Phase 4 |
