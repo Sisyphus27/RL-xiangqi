@@ -20,6 +20,7 @@ import pytest
 
 from src.xiangqi.engine.state import XiangqiState
 from src.xiangqi.engine.legal import generate_legal_moves, is_in_check
+from src.xiangqi.engine.types import rc_to_sq, encode_move
 
 
 # CPW-verified reference values (CORRECT -- use these)
@@ -28,6 +29,32 @@ CPW_PERFT = {
     2: 1920,
     3: 79666,
     4: 3_290_240,
+}
+
+# CPW-verified perft divide at depth 1 (each key = (fr, fc, tr, tc), value = subtree size at depth 2)
+CPW_PERFT_DIVIDE = {
+    (7, 1, 3, 1): 40,  (7, 7, 3, 7): 40,
+    (7, 1, 4, 1): 41,  (7, 7, 4, 7): 41,
+    (6, 0, 5, 0): 44,  (7, 1, 5, 1): 42,
+    (6, 2, 5, 2): 44,  (6, 4, 5, 4): 44,
+    (6, 6, 5, 6): 44,  (7, 7, 5, 7): 42,
+    (6, 8, 5, 8): 44,  (7, 1, 6, 1): 43,
+    (7, 7, 6, 7): 43,  (7, 1, 7, 0): 45,
+    (9, 0, 7, 0): 44,  (9, 1, 7, 0): 43,
+    (9, 2, 7, 0): 44,  (7, 1, 7, 2): 45,
+    (7, 7, 7, 2): 45,  (9, 1, 7, 2): 43,
+    (7, 1, 7, 3): 45,  (7, 7, 7, 3): 45,
+    (7, 1, 7, 4): 45,  (7, 7, 7, 4): 45,
+    (9, 2, 7, 4): 44,  (9, 6, 7, 4): 44,
+    (7, 1, 7, 5): 45,  (7, 7, 7, 5): 45,
+    (7, 1, 7, 6): 45,  (7, 7, 7, 6): 45,
+    (9, 7, 7, 6): 43,  (7, 7, 7, 8): 45,
+    (9, 6, 7, 8): 44,  (9, 7, 7, 8): 43,
+    (9, 8, 7, 8): 44,  (9, 0, 8, 0): 44,
+    (7, 1, 8, 1): 45,  (9, 3, 8, 4): 44,
+    (9, 4, 8, 4): 44,  (9, 5, 8, 4): 44,
+    (7, 7, 8, 7): 45,  (9, 8, 8, 8): 44,
+    (7, 1, 0, 1): 41,  (7, 7, 0, 7): 41,
 }
 
 # REQUIREMENTS.md values (INCORRECT -- for reference only, do not assert against)
@@ -154,6 +181,22 @@ class TestPerftDivide:
         # All individual move counts should be > 0
         for move, cnt in move_counts.items():
             assert cnt > 0, f"Move {move} has 0 nodes -- indicates illegal move included"
+        # Per-child CPW reference assertions: each move's subtree must match the CPW value
+        for move, cnt in move_counts.items():
+            from_sq = move & 0x1FF
+            to_sq = (move >> 9) & 0x7F
+            fr, fc = rc_to_sq(from_sq) if False else (from_sq // 9, from_sq % 9)
+            tr, tc = rc_to_sq(to_sq) if False else (to_sq // 9, to_sq % 9)
+            # Actually decode correctly using sq_to_rc
+            fr = from_sq // 9
+            fc = from_sq % 9
+            tr = to_sq // 9
+            tc = to_sq % 9
+            expected = CPW_PERFT_DIVIDE.get((fr, fc, tr, tc))
+            if expected is not None:
+                assert cnt == expected, (
+                    f"Move ({fr},{fc})->({tr},{tc}): expected {expected}, got {cnt}"
+                )
 
 
 class TestPerftEdgeCases:
