@@ -296,8 +296,9 @@ class TestGenSoldier:
         moves = gen_soldier(board, sq, +1)
         # River between rows 4 and 5. Red home = rows 5-9.
         # Red soldier at row 6: fr=6, crossed = (1==+1 and 6<=4) = False → forward only
+        # Red advances toward enemy home (row 0) → forward_dr=-1 → row 6→5
         assert len(moves) == 1
-        assert decode_move(moves[0])[1] == rc_to_sq(7, 3)
+        assert decode_move(moves[0])[1] == rc_to_sq(5, 3)  # row 5 (first step toward enemy)
 
     def test_red_soldier_crossed_river(self):
         """Red soldier at row 3 (across river) moves forward + sideways."""
@@ -308,7 +309,7 @@ class TestGenSoldier:
         # Red soldier at row 3: fr=3, crossed = (1==+1 and 3<=4) = True → forward + sideways
         assert len(moves) == 3
         destinations = {decode_move(m)[1] for m in moves}
-        assert rc_to_sq(4, 3) in destinations   # forward
+        assert rc_to_sq(2, 3) in destinations   # forward to row 2 (toward enemy home)
         assert rc_to_sq(3, 2) in destinations   # left
         assert rc_to_sq(3, 4) in destinations   # right
 
@@ -323,7 +324,7 @@ class TestGenSoldier:
         # FIXED: crossed = (color==+1 and fr<=4) or (color==-1 and fr>=5)
         # Black: (-1==+1 and 3<=4) or (-1==-1 and 3>=5) = False → not crossed → forward only
         assert len(moves) == 1
-        assert decode_move(moves[0])[1] == rc_to_sq(2, 3)
+        assert decode_move(moves[0])[1] == rc_to_sq(4, 3)
 
     def test_black_soldier_crossed_river(self):
         """Black soldier at row 6 (across river) moves forward + sideways."""
@@ -334,7 +335,7 @@ class TestGenSoldier:
         # Black soldier at row 6: crossed = (-1==-1 and 6>=5) = True → forward + sideways
         assert len(moves) == 3
         destinations = {decode_move(m)[1] for m in moves}
-        assert rc_to_sq(5, 3) in destinations   # forward
+        assert rc_to_sq(7, 3) in destinations   # forward to row 7 (toward enemy home)
         assert rc_to_sq(6, 2) in destinations   # left
         assert rc_to_sq(6, 4) in destinations   # right
 
@@ -342,12 +343,12 @@ class TestGenSoldier:
         """Soldier can capture enemy in front."""
         board = np.zeros((ROWS, COLS), dtype=np.int8)
         board[6, 3] = Piece.R_BING
-        board[7, 3] = Piece.B_ZU  # enemy in front
+        board[5, 3] = Piece.B_ZU  # enemy directly ahead (row 5, toward enemy home)
         sq = rc_to_sq(6, 3)
         moves = gen_soldier(board, sq, +1)
         captures = [m for m in moves if decode_move(m)[2]]
         assert len(captures) == 1
-        assert decode_move(captures[0])[1] == rc_to_sq(7, 3)
+        assert decode_move(captures[0])[1] == rc_to_sq(5, 3)
 
 
 class TestMoveEncoding:

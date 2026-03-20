@@ -183,7 +183,7 @@ def gen_soldier(board: np.ndarray, from_sq: int, color: int) -> List[int]:
     """Forward 1-step always; forward+sideways after crossing river."""
     fr, fc = sq_to_rc(from_sq)
     moves: List[int] = []
-    forward_dr = +1 if color == +1 else -1
+    forward_dr = -1 if color == +1 else +1
     # Forward move
     nr, nc = fr + forward_dr, fc
     if 0 <= nr < ROWS:
