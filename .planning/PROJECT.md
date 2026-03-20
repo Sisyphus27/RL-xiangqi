@@ -13,6 +13,9 @@
 ### Validated
 
 - [x] Phase 1: 数据结构 (v0.1) — 棋盘表示 (DATA-01), Piece枚举 (DATA-02), 走法编码 (DATA-03), XiangqiState (DATA-04), FEN与边界掩码 (DATA-05) — 28 tests passing
+- [x] Phase 2: 棋子走法与规则校验 (v0.1) — 所有7种棋子的合法走法生成，将军/应将检测 — 94 tests passing
+- [x] Phase 3: 终局判定 (v0.1) — 将死/困毙/和棋规则（含长将/长捉/重复局面）— 30 tests passing
+- [x] Phase 4: API 接口 (v0.1) — XiangqiEngine公共API，FEN往返，undo/redo，perft验证 — 47 tests passing
 
 ### Active
 
@@ -53,33 +56,25 @@
 
 **Goal:** 实现完整的中国象棋规则引擎（纯 Python，无 UI、无 RL 接口）
 
+**Status:** ✓ COMPLETE — All 4 phases verified (Phase 04: api-interface completed 2026-03-20)
+
 **Scope:** 棋盘表示、合法走法生成、将军检测、终局判定、API接口、测试
 
-**Target features:**
-- 棋盘表示与棋子数据结构
-- 所有7种棋子的合法走法生成
-- 将军检测与应将逻辑
-- 胜负判定（将死、困毙、和棋规则）
-- 走法合法性校验API
-- 性能优化（每步<100ms）
-
-**Phase structure:**
-- Phase 1: 数据结构
-- Phase 2: 棋子走法与规则校验
-- Phase 3: 终局判定
-- Phase 4: API 接口与集成测试
-
-**Research outputs:**
-- `research/RULES.md` — 完整中国象棋规则（含边界情况）
-- `research/DATA_STRUCTURES.md` — 数据结构与算法设计
-- `research/RL_ENV.md` — RL 环境接口设计（供 v0.2 参考）
-- `research/LIBRARIES.md` — Python 象棋库与工具链
+**Delivered features:**
+- ✓ 棋盘表示与棋子数据结构（Phase 1）
+- ✓ 所有7种棋子的合法走法生成（Phase 2）
+- ✓ 将军检测与应将逻辑（Phase 2）
+- ✓ 胜负判定（将死、困毙、和棋规则）（Phase 3）
+- ✓ XiangqiEngine公共API（Phase 4）
+- ✓ 走法合法性校验API（Phase 4）
+- ✓ 性能优化（每步<100ms）（Phase 4）
+- ✓ 199 tests passing across all phases
 
 ## Milestones
 
 | Version | Status | Description |
 |---------|--------|-------------|
-| v0.1 | In Progress | 象棋引擎（纯规则，无UI/RL） |
+| v0.1 | ✓ Complete | 象棋引擎（纯规则，无UI/RL） |
 | v0.2 | — | RL 环境接口 |
 | v0.3 | — | PyQt6 UI |
 | v1.0 | — | AI 对弈（Alpha-Beta / MCTS） |
@@ -95,4 +90,4 @@
 | 桌面应用 | 本地训练需要计算资源，桌面更稳定 | — Pending |
 
 ---
-*Last updated: 2026-03-19 after v0.1 milestone setup*
+*Last updated: 2026-03-20 after Phase 04 completion (v0.1 milestone complete)*
