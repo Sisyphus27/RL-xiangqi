@@ -48,12 +48,12 @@
 - [ ] **API-01**: `XiangqiEngine` 类：`reset()`、`apply_move(move)`、`undo_move()`、`is_legal(move)`、`legal_moves()`、`is_check()`、`result()`
 - [ ] **API-02**: 走法执行后状态正确更新（board、turn、move_history、halfmove_clock）
 - [ ] **API-03**: FEN 解析与导出：`from_fen(fen)`、`to_fen()`
-- [ ] **API-04**: 性能：合法走法生成 < 10ms/局面，完整局面评估 < 100ms
+- [x] **API-04**: 性能：合法走法生成 < 10ms/局面，完整局面评估 < 100ms
 
 ### 测试 (TEST)
 
 - [x] **TEST-01**: Perft 测试：depth=1 ≈ 44 种，depth=2 ≈ 1,916 种，depth=3 ≈ 72,987 种
-- [ ] **TEST-02**: 参考 `pyffish` 库交叉验证所有走法合法性（`pyffish` 可用时）
+- [x] **TEST-02**: 参考 `pyffish` 库交叉验证所有走法合法性（`pyffish` 可用时）
 - [x] **TEST-03**: 边界局面：将军局面、将死局面、困毙局面 (test_endgame.py)
 - [x] **TEST-04**: 特殊规则：长将和棋、重复局面和棋、面对面规则 (test_repetition.py)
 
