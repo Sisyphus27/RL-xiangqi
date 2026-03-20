@@ -40,14 +40,15 @@ class RepetitionState:
 
         # ── Long check tracking ──────────────────────────────────────
         # If mover's move just gave check (opponent now in check), increment counter.
-        # After apply_move(), new_state.turn is the NEXT player, so opponent = new_state.turn * -1 == mover.
-        if is_in_check(new_state, mover):
+        # After apply_move(), new_state.turn is the NEXT player (opponent).
+        # is_in_check(new_state, new_state.turn) checks whether opponent is in check.
+        if is_in_check(new_state, new_state.turn):
             self.consecutive_check_count += 1
         else:
             self.consecutive_check_count = 0
 
         # ── Long chase tracking ──────────────────────────────────────
-        chase = _detect_chase(prev_state, move, new_state, mover)
+        chase = _detect_chase(prev_state, move, new_state)
         if chase is None:
             # Non-chase move: reset sequence (opponent interrupted)
             self.chase_seq = []
@@ -59,17 +60,22 @@ class RepetitionState:
             # Capture detection: if tgt_sq is now empty, the target piece was captured
             tr, tc = divmod(tgt_sq, 9)
             captured = int(new_state.board[tr, tc]) == 0
-            # New square: has the chasing piece (att_sq) never appeared in the current chase seq?
-            chase_sq = {sq for _, sq in self.chase_seq}
-            is_new = att_sq not in chase_sq
-            meaningful = gives_check or captured or is_new
-
-            if meaningful:
-                # Meaningful progress: break old sequence, start new one
-                self.chase_seq = [(att_sq, tgt_sq)]
-            else:
-                # Same (att_sq, tgt_sq) pair: extend sequence
+            # "Meaningful progress" = the chase has changed from the last entry.
+            # Both att_sq and tgt_sq must match the last entry for it to be a repeat.
+            prev = self.chase_seq[-1] if self.chase_seq else None
+            if prev is not None and prev == (att_sq, tgt_sq):
+                # Same (att_sq, tgt_sq) as last entry: non-meaningful -> append
                 self.chase_seq.append((att_sq, tgt_sq))
+            else:
+                # Different from last entry: check if the attacking square is new
+                # (a new attacking square = meaningful, even if target is the same)
+                all_att_sqs = {a for a, _ in self.chase_seq}
+                if att_sq not in all_att_sqs:
+                    # New attacking square: meaningful -> reset
+                    self.chase_seq = [(att_sq, tgt_sq)]
+                else:
+                    # Same attacking square as before (different target): reset
+                    self.chase_seq = [(att_sq, tgt_sq)]
             self.last_chasing_color = mover
 
     def reset(self) -> None:
@@ -112,7 +118,7 @@ def check_long_check(state: XiangqiState,
 # ─── Long chase detection ───────────────────────────────────────────────────
 
 def _detect_chase(prev_state: XiangqiState, move: int,
-                  new_state: XiangqiState, mover: int) -> Optional[tuple[int, int]]:
+                  new_state: XiangqiState) -> Optional[tuple[int, int]]:
     """Return (attacking_sq, target_sq) if this move is a chase, else None.
 
     A chase = the moving piece attacks a non-king enemy piece.
@@ -130,26 +136,34 @@ def _detect_chase(prev_state: XiangqiState, move: int,
     board[tr, tc] = piece
     board[fr, fc] = np.int8(0)
 
+    # Use the piece's sign (+1 or -1) for gen_* calls — not the mover.
+    # After apply_move() flips turn, mover may not equal piece_color.
+    piece_color = 1 if piece > 0 else -1
+
     pt = abs(piece)
     if pt == 1:
-        moves = gen_general(board, to_sq, mover)
+        moves = gen_general(board, to_sq, piece_color)
     elif pt == 5:
-        moves = gen_chariot(board, to_sq, mover)
+        moves = gen_chariot(board, to_sq, piece_color)
     elif pt == 6:
-        moves = gen_cannon(board, to_sq, mover)
+        moves = gen_cannon(board, to_sq, piece_color)
     elif pt == 7:
-        moves = gen_soldier(board, to_sq, mover)
+        moves = gen_soldier(board, to_sq, piece_color)
     else:
         return None  # advisor, elephant, horse cannot chase
 
     # Extract all attacked squares from the move list
     attacked_sqs: set[int] = set()
     for m in moves:
-        attacked_sqs.add((m >> 9) & 0x7F)
+        attacked_sqs.add((m >> 9) & 0x7F)  # bits 9-15 of 17-bit encoding
 
-    enemy = -mover
+    enemy = -new_state.turn
     for sq in attacked_sqs:
+        if sq < 0 or sq >= ROWS * COLS:
+            continue  # skip invalid squares (gen_chariot can produce these)
         r, c = divmod(sq, 9)
+        if not (0 <= r < ROWS and 0 <= c < COLS):
+            continue
         p = int(board[r, c])
         if p == 0:
             continue
