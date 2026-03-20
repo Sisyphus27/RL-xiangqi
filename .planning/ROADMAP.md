@@ -36,7 +36,7 @@
 | Phase 1: 数据结构 | 2/2 complete | Complete ✓ |
 | Phase 2 | 3/3 complete | Gaps Closed ✓ |
 | Phase 3 | 1/1 complete | Complete ✓ |
-| Phase 4 | 0/1 pending | Pending |
+| Phase 4 | 0/2 planned | Pending |
 | Phase 2.1 | 1/1 planned | Planned |
 | Phase 2.2 | 1/1 complete | Complete ✓ |
 
@@ -134,18 +134,21 @@
 
 **Deliverables:**
 - `src/xiangqi/engine/engine.py` — `XiangqiEngine` 类，对齐 API-01 全部方法
-- `src/xiangqi/engine/fen.py` — `from_fen()`、`to_fen()`
 - `tests/test_api.py` — 完整 API 集成测试
-- `tests/test_perft.py` — Perft 基准测试（depth 1-4）
+- `tests/test_perft_engine.py` — Perft 基准测试通过 Engine API (depth 1-3)
 - `tests/test_pyffish.py` — pyffish 交叉验证（若 pyffish 可用则执行）
 
 **Verification:**
 - [ ] `test_api.py` — apply/undo move 状态正确、legal_moves 覆盖完整
-- [ ] `test_perft.py` — depth=1 ≈ 44, depth=2 ≈ 1,916, depth=3 ≈ 72,987
+- [ ] `test_perft_engine.py` — depth=1=44, depth=2=1,920, depth=3=79,666 through engine API
 - [ ] `test_pyffish.py` — 所有合法走法与 pyffish 一致（跳过若 pyffish 不可用）
-- [ ] 性能：legal_moves() < 10ms, 完整评估 < 100ms
+- [ ] 性能：legal_moves() < 10ms, result() < 100ms
 
 **Exit criteria:** 引擎通过全部测试，可作为独立模块使用
+
+**Plans:**
+- [ ] `04-01-PLAN.md` — engine.py + RepetitionState.copy() + test_api.py (Wave 1, API-01/02/03)
+- [ ] `04-02-PLAN.md` — test_perft_engine.py + test_pyffish.py (Wave 2, API-04, TEST-01/02)
 
 ---
 
@@ -176,4 +179,4 @@
 ---
 
 *Roadmap created: 2026-03-19*
-*Last updated: 2026-03-20 after Phase 2.2 plan 02.2-01 creation*
+*Last updated: 2026-03-20 after Phase 04 API interface plan completion*
