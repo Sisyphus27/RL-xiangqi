@@ -84,6 +84,18 @@ class RepetitionState:
         self.chase_seq = []
         self.last_chasing_color = 0
 
+    def copy(self) -> RepetitionState:
+        """Return a shallow copy of this RepetitionState.
+
+        The chase_seq list is deep-copied to prevent shared references
+        after engine.undo() restores a snapshot.
+        """
+        return RepetitionState(
+            consecutive_check_count=self.consecutive_check_count,
+            chase_seq=list(self.chase_seq),
+            last_chasing_color=self.last_chasing_color,
+        )
+
 
 # ─── Repetition draw ─────────────────────────────────────────────────────────
 
