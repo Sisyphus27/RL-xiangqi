@@ -35,7 +35,7 @@
 |-------|-------|--------|
 | Phase 1: 数据结构 | 2/2 complete | Complete ✓ |
 | Phase 2 | 3/3 complete | Gaps Closed ✓ |
-| Phase 3 | 0/1 pending | Pending |
+| Phase 3 | 1/1 complete | Complete ✓ |
 | Phase 4 | 0/1 pending | Pending |
 | Phase 2.1 | 1/1 planned | Planned |
 | Phase 2.2 | 1/1 complete | Complete ✓ |
@@ -115,11 +115,14 @@
 - `src/xiangqi/engine/perpetual.py` — 长将/长捉计数器，≥4步判和
 
 **Verification:**
-- [ ] `test_endgame.py` — 将死局面、困毙局面返回正确结果
-- [ ] `test_repetition.py` — 三次重复局面触发和棋
-- [ ] `test_perpetual.py` — 长将局面触发和棋
+- [x] `test_endgame.py` — 将死局面、困毙局面返回正确结果 (6 tests)
+- [x] `test_repetition.py` — 三次重复局面触发和棋 + 长将/长捉 (24 tests)
+- [x] `test_perpetual.py` — 长将局面触发和棋 (integrated in test_repetition.py)
 
-**Exit criteria:** 所有 5 个 END 需求覆盖，边界测试通过
+**Plans:**
+- [x] `03-01-PLAN.md` — endgame.py + repetition.py + rules.py shim + legal/state __all__ + tests (7 tasks, END-01..04) ✓
+
+**Exit criteria:** 所有 5 个 END 需求覆盖，边界测试通过 ✓ (132 tests pass)
 
 ---
 

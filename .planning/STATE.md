@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 03 context gathered
-last_updated: "2026-03-20T11:42:25.808Z"
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-20T13:12:38.125Z"
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 7
-  completed_plans: 6
+  completed_phases: 4
+  total_plans: 8
+  completed_plans: 7
   percent: 100
 ---
 
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-19)
 
 ## Current Position
 
-Phase: 02.2 (tech-debt-cleanup) — EXECUTING
+Phase: 03 (endgame-detection) — Complete
 Plan: 1 of 1
 
 ## Phase Structure
@@ -62,6 +62,7 @@ Progress: [██████████] 100%
 | Phase 02 P02 | 25 | 1 tasks | 3 files |
 | Phase 02.1 P01 | 480 | 2 tasks | 1 files |
 | Phase 02.2 P01 | 180 | 4 tasks | 4 files |
+| Phase 03 P01 | 65 | 7 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,10 @@ Recent decisions affecting current work:
 - [Phase 02.1]: R_SHI at (8,3)/(8,5) (not 9,3/9,5) blocks diagonal escapes; R_SHI at row 9 can capture B_SHI at (8,4) diagonally
 - [Phase 02.2]: Strict equality (==44) over permissive lower-bound (>=40) for starting position legal move count
 - [Phase 02.2]: Per-child CPW assertions catch regressions in individual depth-1 move subtree counts, not just total
+- [Phase 03]: Lazy import of repetition.py inside get_game_result() avoids circular dependency
+- [Phase 03]: RepetitionState lives in engine.py (Phase 4), not XiangqiState — separation of concerns
+- [Phase 03]: Long check -> DRAW; Long chase -> chaser LOSES (per WXO rules)
+- [Phase 03]: enemy = -new_state.turn in _detect_chase; piece_color = 1 if piece>0 else -1 for gen_* calls
 
 ### Pending Todos
 
@@ -99,6 +104,6 @@ None — Phases 1 and 2 complete, ready for Phase 3 endgame detection.
 
 ## Session Continuity
 
-Last session: 2026-03-20T11:42:25.805Z
-Stopped at: Phase 03 context gathered
-Resume file: .planning/phases/03-endgame-detection/03-CONTEXT.md
+Last session: 2026-03-20T13:12:38.123Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None
