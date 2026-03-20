@@ -207,7 +207,7 @@ class TestGenerateLegalMoves:
         state = XiangqiState.starting()
         moves = generate_legal_moves(state)
         assert isinstance(moves, list)
-        assert len(moves) >= 40
+        assert len(moves) == 44
 
     def test_no_legal_moves_isolated_checkmate(self):
         """Isolated checkmate: double chariot mating net, no escape.
