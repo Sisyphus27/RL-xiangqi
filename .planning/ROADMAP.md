@@ -37,7 +37,7 @@
 | Phase 2 | 3/3 complete | Gaps Closed ✓ |
 | Phase 3 | 0/1 pending | Pending |
 | Phase 4 | 0/1 pending | Pending |
-| Phase 2.1 | 0/1 pending | Pending |
+| Phase 2.1 | 1/1 planned | Planned |
 | Phase 2.2 | 0/1 pending | Pending |
 
 ---
@@ -62,7 +62,7 @@
 - [x] `02-01-PLAN.md` — moves.py + legal.py + rules.py + unit tests (Wave 1, 3 tasks, MOVE-01..07 + RULE-01..05)
 - [x] `02-02-PLAN.md` — test_perft.py with CPW-verified reference values (Wave 2, 1 task, TEST-01)
 - [x] `02-03-SUMMARY.md` — fix gen_soldier forward_dr direction + update soldier tests (gap closure, TEST-01)
-- [ ] `02.1-PLAN.md` — redesign test_stalemate_also_loss board + update RULE-06 TEST-01 checkbox
+- [x] `02.1-PLAN.md` — redesign test_stalemate_also_loss board + verify RULE-06 checkmate (planned)
 - [ ] `02.2-PLAN.md` — Phase 2 tech debt cleanup (doc hygiene, test hardening)
 
 **Exit criteria:** 所有 13 个 MOVE/RULE 需求覆盖，Perft depth=1~3 通过
@@ -71,16 +71,15 @@
 
 ## Phase 2.1 — Fix Stalemate Test + TEST-01 Checkbox (Gap Closure)
 
-**Goal:** Close remaining v0.1 blocking gap — redesign `test_stalemate_also_loss` board position so red genuinely has no legal moves (no longer relies on the soldier direction bug). Update TEST-01 checkbox.
+**Goal:** Close remaining v0.1 blocking gap — redesign `test_stalemate_also_loss` board position so red genuinely has no legal moves (no longer relies on the soldier direction bug). TEST-01 checkbox already marked `[x]` in REQUIREMENTS.md.
 
-**Gap Closure:** Closes audit finding `test_stalemate_also_loss` (RULE-06 partial) + TEST-01 checkbox
+**Gap Closure:** Closes audit finding `test_stalemate_also_loss` (RULE-06 partial)
 
 **Tasks:**
 - Redesign stalemate test board: place pieces so red general has no legal moves and is in check (checkmate = BLACK_WINS)
 - Verify test passes with corrected board
-- Update REQUIREMENTS.md TEST-01 checkbox: `[ ]` → `[x]`
 
-**Exit criteria:** 102/102 tests pass, TEST-01 checkbox marked `[x]`
+**Exit criteria:** 102/102 tests pass
 
 ---
 
