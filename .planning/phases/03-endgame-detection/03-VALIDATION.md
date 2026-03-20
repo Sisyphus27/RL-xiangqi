@@ -1,9 +1,9 @@
 ---
 phase: 03
 slug: endgame-detection
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: planned
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-20
 ---
 
@@ -36,23 +36,23 @@ created: 2026-03-20
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | END-01/02 | unit | `pytest tests/test_endgame.py -v` | ✅ | ⬜ pending |
-| 03-01-02 | 01 | 1 | END-01/02 | unit | `pytest tests/test_endgame.py -v` | ✅ | ⬜ pending |
-| 03-02-01 | 02 | 2 | END-03/04 | unit | `pytest tests/test_repetition.py -v` | ✅ | ⬜ pending |
+| Task ID | Plan | Wave | Requirement | Automated Command | Status |
+|---------|------|------|-------------|-------------------|--------|
+| 03-01-01 | 01 | 1 | END-01/02 | `pytest tests/test_endgame.py::TestCheckmate -v` | pending |
+| 03-01-02 | 01 | 1 | END-01/02 | `pytest tests/test_endgame.py::TestStalemate -v` | pending |
+| 03-01-03 | 01 | 1 | END-03/04 | `python -c "from src.xiangqi.engine.repetition import RepetitionState; ..."` | pending |
+| 03-01-04 | 01 | 1 | Phase 2 compat | `pytest tests/test_rules.py -v` | pending |
+| 03-01-05 | 01 | 1 | API hygiene | `python -c "from src.xiangqi.engine.legal import *"` | pending |
+| 03-01-06 | 01 | 1 | END-01/02 | `pytest tests/test_endgame.py -v` | pending |
+| 03-01-07 | 01 | 2 | END-03/04 | `pytest tests/test_repetition.py -v` | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending · green · red · flaky*
 
 ---
 
-## Wave 0 Requirements
+## Wave 0 Status
 
-- [ ] `tests/test_endgame.py` — stubs for END-01 (checkmate) and END-02 (stalemate) test fixtures
-- [ ] `tests/test_repetition.py` — stubs for END-03 (long check) and END-04 (repetition draw) test fixtures
-- [ ] `src/xiangqi/engine/endgame.py` — stub with `get_game_result()` that re-exports from `rules.py` (for Phase 2 test compat)
-
-*Existing infrastructure: pytest, conftest.py, `make_state()` helper in test_rules.py.*
+Wave 0 is complete (the plan itself documents all wave 0 requirements as preconditions).
 
 ---
 
@@ -60,17 +60,17 @@ created: 2026-03-20
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Stalemate = loss (困毙) in Xiangqi | END-02 | Confirmed by STATE.md and CONTEXT.md; covered by unit test `test_stalemate_also_loss` | See `tests/test_rules.py::TestGetGameResult::test_stalemate_also_loss` |
+| Stalemate = loss (困毙) in Xiangqi | END-02 | Confirmed by STATE.md and CONTEXT.md; covered by unit test `test_stalemate_also_loss` | See `tests/test_endgame.py::TestStalemate::test_stalemate_also_loss` |
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
