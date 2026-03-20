@@ -136,6 +136,24 @@ def is_in_check(state: XiangqiState, color: int) -> bool:
 
     return False
 
+# ─── Flying general detection helpers ────────────────────────────────────────
+
+def _generals_face_each_other(board: np.ndarray, king_positions: dict[int, int]) -> int | None:
+    """Return the column index if both generals face each other (same col, nothing between), else None."""
+    rk = king_positions.get(+1)
+    bk = king_positions.get(-1)
+    if rk is None or bk is None:
+        return None
+    rr, rc_col = sq_to_rc(rk)
+    br, bc = sq_to_rc(bk)
+    if rc_col != bc:
+        return None
+    lo, hi = min(rr, br), max(rr, br)
+    for r in range(lo + 1, hi):
+        if board[r, rc_col] != 0:
+            return None
+    return rc_col  # they face each other on this file
+
 # ─── Flying general detection ────────────────────────────────────────────────
 
 def flying_general_violation(state: XiangqiState, turn_before_move: int) -> bool:
@@ -249,4 +267,11 @@ def generate_legal_moves(state: XiangqiState) -> List[int]:
     return [m for m in moves if is_legal_move(state, m)]
 
 
-__all__ = ['is_in_check', 'is_legal_move', 'generate_legal_moves', 'apply_move', 'flying_general_violation']
+__all__ = [
+    'is_in_check',
+    'flying_general_violation',
+    '_generals_face_each_other',
+    'apply_move',
+    'is_legal_move',
+    'generate_legal_moves',
+]

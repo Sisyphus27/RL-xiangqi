@@ -138,3 +138,6 @@ class XiangqiState:
             zobrist_hash_history=self.zobrist_hash_history.copy(),
             king_positions=dict(self.king_positions),
         )
+
+
+__all__ = ['XiangqiState', 'compute_hash', 'update_hash', '_find_king_positions']
