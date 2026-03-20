@@ -34,7 +34,7 @@
 | Phase | Plans | Status |
 |-------|-------|--------|
 | Phase 1: 数据结构 | 2/2 complete | Complete ✓ |
-| Phase 2 | 0/2 pending | Pending |
+| Phase 2 | 3/3 complete | Complete ✓ |
 | Phase 3 | 0/1 pending | Pending |
 | Phase 4 | 0/1 pending | Pending |
 
@@ -58,7 +58,8 @@
 
 **Plans:**
 - [ ] `02-01-PLAN.md` — moves.py + legal.py + rules.py + unit tests (Wave 1, 3 tasks, MOVE-01..07 + RULE-01..05)
-- [ ] `02-02-PLAN.md` — test_perft.py with CPW-verified reference values (Wave 2, 1 task, TEST-01)
+- [x] `02-02-PLAN.md` — test_perft.py with CPW-verified reference values (Wave 2, 1 task, TEST-01)
+- [ ] `02-03-PLAN.md` — fix gen_soldier forward_dr direction + update soldier tests (gap closure, TEST-01)
 
 **Exit criteria:** 所有 13 个 MOVE/RULE 需求覆盖，Perft depth=1~3 通过
 
