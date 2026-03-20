@@ -231,6 +231,15 @@ def is_legal_move(state: XiangqiState, move: int) -> bool:
     Legality = pseudo-legal + own general not left in check + no flying general violation.
     """
     moving_color = state.turn  # color BEFORE turn flip
+    from_sq = move & 0x1FF
+    to_sq   = (move >> 9) & 0x7F
+    fr, fc  = sq_to_rc(from_sq)
+    piece   = state.board[fr, fc]
+    # Rule: can only move own pieces
+    if piece == 0:
+        return False
+    if (piece > 0) != (moving_color > 0):
+        return False
     snap = state.copy()
     apply_move(snap, move)
     # After apply_move, snap.turn is the OPPONENT's color.
