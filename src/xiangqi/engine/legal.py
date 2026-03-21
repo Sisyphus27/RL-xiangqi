@@ -31,6 +31,89 @@ _HORSE_LEG_DEST = [
     ( 0, +1, (-1, +2), (+1, +2)),
 ]
 
+# ─── Piece-geometry validators ─────────────────────────────────────────────
+
+def _is_valid_geometry(piece: int, fr: int, fc: int, tr: int, tc: int, board: np.ndarray) -> bool:
+    """Return True if (fr,fc)->(tr,tc) is a geometrically valid move for piece type.
+
+    piece is the board cell value (positive for red, negative for black).
+    This check is piece-type-specific; it does NOT check board occupancy.
+    """
+    pt = abs(piece)
+    dr, dc = tr - fr, tc - fc
+    color = +1 if piece > 0 else -1
+
+    if pt == 1:  # General: orthogonal 1-step within palace
+        if (abs(dr), abs(dc)) == (0, 1) or (abs(dr), abs(dc)) == (1, 0):
+            return bool(IN_PALACE[tr, tc])
+        return False
+
+    if pt == 2:  # Advisor: diagonal 1-step within palace
+        if (abs(dr), abs(dc)) == (1, 1):
+            return bool(IN_PALACE[tr, tc])
+        return False
+
+    if pt == 3:  # Elephant: diagonal 2-step, eye must be empty, cannot cross river
+        if (abs(dr), abs(dc)) != (2, 2):
+            return False
+        eye_r, eye_c = fr + dr // 2, fc + dc // 2
+        home_rows = range(5, 10) if color == +1 else range(0, 5)
+        if (tr not in home_rows) or (board[eye_r, eye_c] != 0):
+            return False
+        return True
+
+    if pt == 4:  # Horse: L-shape (orthogonal 1-step leg + diagonal 1-step)
+        for leg_dr, leg_dc, d1, d2 in _HORSE_LEG_DEST:
+            leg_r, leg_c = fr + leg_dr, fc + leg_dc
+            if not (0 <= leg_r < ROWS and 0 <= leg_c < COLS):
+                continue
+            for dest_dr, dest_dc in d1, d2:
+                if tr - fr == dest_dr and tc - fc == dest_dc:
+                    if board[leg_r, leg_c] == 0:  # leg must be empty
+                        return True
+        return False
+
+    if pt == 5:  # Chariot: orthogonal sliding
+        if dr != 0 and dc != 0:
+            return False
+        step_r = 0 if dr == 0 else (1 if dr > 0 else -1)
+        step_c = 0 if dc == 0 else (1 if dc > 0 else -1)
+        nr, nc = fr + step_r, fc + step_c
+        while (nr, nc) != (tr, tc):
+            if board[nr, nc] != 0:
+                return False
+            nr += step_r
+            nc += step_c
+        return True
+
+    if pt == 6:  # Cannon: orthogonal sliding, capture needs exactly 1 screen
+        if dr != 0 and dc != 0:
+            return False
+        step_r = 0 if dr == 0 else (1 if dr > 0 else -1)
+        step_c = 0 if dc == 0 else (1 if dc > 0 else -1)
+        nr, nc = fr + step_r, fc + step_c
+        screens = 0
+        while (nr, nc) != (tr, tc):
+            if board[nr, nc] != 0:
+                screens += 1
+                if screens > 1:
+                    return False
+            nr += step_r
+            nc += step_c
+        # Destination reached; no occupancy check here (done by caller)
+        return True
+
+    if pt == 7:  # Soldier: forward 1-step; sideways only after crossing river
+        forward_dr = -1 if color == +1 else +1
+        if dr == forward_dr and dc == 0:
+            return True
+        crossed = (color == +1 and fr <= 4) or (color == -1 and fr >= 5)
+        if crossed and dr == 0 and (dc == -1 or dc == +1):
+            return True
+        return False
+
+    return False  # unknown piece type
+
 # ─── Check detection ──────────────────────────────────────────────────────────
 
 def is_in_check(state: XiangqiState, color: int) -> bool:
@@ -239,6 +322,10 @@ def is_legal_move(state: XiangqiState, move: int) -> bool:
     if piece == 0:
         return False
     if (piece > 0) != (moving_color > 0):
+        return False
+    # Geometry check: reject move if destination geometry is invalid for piece type
+    tr, tc = sq_to_rc(to_sq)
+    if not _is_valid_geometry(piece, fr, fc, tr, tc, state.board):
         return False
     snap = state.copy()
     apply_move(snap, move)
