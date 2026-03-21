@@ -41,35 +41,20 @@
 
 ## Context
 
-- **平台**: MacBook Pro M1 Max 32GB
-- **后端**: PyTorch MPS (Apple Silicon Metal Performance Shaders)
-- **UI框架**: PyQt6
-- **RL框架**: 自定义实现（或Stable-Baselines3适配）
+- **Platform**: MacBook Pro M1 Max 32GB
+- **Backend**: PyTorch MPS (Apple Silicon Metal Performance Shaders)
+- **UI Framework**: PyQt6 (pending v0.3)
+- **RL Framework**: Custom or Stable-Baselines3
+- **Codebase**: `src/xiangqi/engine/` — 4,056 lines Python
+- **Test Suite**: 179 passed, 1 skipped (pyffish unavailable)
+- **Git Range**: 2026-03-19 → 2026-03-21 (2 days, ~20 commits)
+- **Phase Count**: 7 phases, 11 plans completed
 
-## Constraints
+## Current Milestone: v0.2 RL Environment Interface
 
-- **Tech Stack**: Python + PyTorch + PyQt6 — 用户熟悉，生态成熟
-- **Hardware**: Apple Silicon MPS — 无CUDA，需适配MPS后端
-- **Learning**: 从零开始 — 不依赖预训练，完全在线学习
-- **Architecture**: 异构多智能体 — 每种棋子独立网络，协作决策
+**Goal:** Gymnasium `Env` interface wrapping the v0.1 engine — `reset()`, `step()`, `observation_space`, `action_space`, AlphaZero-style board planes.
 
-## Current Milestone: v0.1 构建象棋引擎
-
-**Goal:** 实现完整的中国象棋规则引擎（纯 Python，无 UI、无 RL 接口）
-
-**Status:** ✓ COMPLETE — All phases verified (Phase 04: api-interface 2026-03-20; Phase 04.1: bugfix-legal 2026-03-21)
-
-**Scope:** 棋盘表示、合法走法生成、将军检测、终局判定、API接口、测试
-
-**Delivered features:**
-- ✓ 棋盘表示与棋子数据结构（Phase 1）
-- ✓ 所有7种棋子的合法走法生成（Phase 2）
-- ✓ 将军检测与应将逻辑（Phase 2）
-- ✓ 胜负判定（将死、困毙、和棋规则）（Phase 3）
-- ✓ XiangqiEngine公共API（Phase 4）
-- ✓ 走法合法性校验API（Phase 4, bugfixed 4.1）
-- ✓ 性能优化（legal_moves<10ms实测0.54ms）（Phase 4, bugfixed 4.1）
-- ✓ 199 tests passing across all phases
+**Status:** Not started — awaiting v0.1 archival
 
 ## Milestones
 
@@ -84,11 +69,18 @@
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 异构智能体架构 | 不同棋子移动方式差异大，独立策略更合理 | — Pending |
-| 独立提议+仲裁 | 各棋子智能体提出候选走法，仲裁网络选择最优 | — Pending |
-| Shaping奖励 | 纯终局奖励稀疏，中间奖励加速学习 | — Pending |
-| 从零开始 | 验证在线学习能力，不依赖先验知识 | — Pending |
-| 桌面应用 | 本地训练需要计算资源，桌面更稳定 | — Pending |
+| 异构智能体架构 | 不同棋子移动方式差异大，独立策略更合理 | v0.1: 棋子走法架构设计完成 |
+| 独立提议+仲裁 | 各棋子智能体提出候选走法，仲裁网络选择最优 | v0.1: RL环境接口待实现 |
+| Shaping奖励 | 纯终局奖励稀疏，中间奖励加速学习 | v0.1: 终局判定完成，奖励设计待v0.2 |
+| 从零开始 | 验证在线学习能力，不依赖先验知识 | v0.1: 引擎无预训练依赖 |
+| 桌面应用 | 本地训练需要计算资源，桌面更稳定 | v0.1: PyQt6 UI待实现 |
+| Move encoding: 7-bit to_sq | 原plan为9-bit有bit overlap bug；修正后范围0-89只需7 bits | ✓ v0.1 |
+| RepetitionState在engine.py | XiangqiState为纯棋盘状态；重复跟踪是游戏历史策略 | ✓ v0.1 |
+| 长将→DRAW，长捉→捉方负 | WXO规则：长将无法解除→和棋；长捉属故意拖延→判负 | ✓ v0.1 |
+| 几何校验在board copy前 | is_legal()先验证走法几何（O(1)），再做board copy后检查 | ✓ v0.1 (Bug 1 fix) |
+| 己方棋子预过滤 | generate_legal_moves()先过滤己方目的格，避免不必要board copy | ✓ v0.1 (Bug 2 fix, 58x perf) |
+| 兵前进方向：红-1/黑+1 | 红兵向敌方阵地（row减少），黑兵向红方阵地（row增加） | ✓ v0.1 (Bug fix) |
+| Stalemate=负（中国规则） | 困毙=无合法走法，无论是否被将军均判负 | ✓ v0.1 |
 
 ---
-*Last updated: 2026-03-20 after Phase 04 completion (v0.1 milestone complete)*
+*Last updated: 2026-03-21 after v0.1 milestone completion*
