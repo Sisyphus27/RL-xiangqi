@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.1
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-20T15:30:43.520Z"
+stopped_at: Completed 04.1-01-PLAN.md
+last_updated: "2026-03-21T03:09:09.382Z"
 progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 10
-  completed_plans: 9
+  total_phases: 7
+  completed_phases: 6
+  total_plans: 11
+  completed_plans: 10
   percent: 100
 ---
 
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 04 — api-interface
+**Current focus:** Phase 04.1 — bugfix-legal
 
 ## Runtime Environment
 
@@ -32,8 +32,8 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 04 (api-interface) — PLAN 1 OF 2 COMPLETE
-Plan: 2 of 2
+Phase: 04.1 (bugfix-legal) — COMPLETE
+Plan: 1 of 1
 
 ## Phase Structure
 
@@ -44,9 +44,9 @@ Plan: 2 of 2
 | 2.1 | Fix stalemate test | RULE-06 | Complete |
 | 2.2 | Tech debt cleanup | — | Complete |
 | 3 | 终局判定 | END-01..05 | Complete |
-| 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Plan 1 complete, plan 2 pending |
+| 4 | API 接口与集成测试 | API-01..04, TEST-01..04 | Plans 1-2 complete |
 
-Progress: [██████████] 100%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -74,6 +74,8 @@ Progress: [██████████] 100%
 | Phase 02.2 P01 | 180 | 4 tasks | 4 files |
 | Phase 03 P01 | 65 | 7 tasks | 8 files |
 | Phase 04 P01 | 523 | 3 tasks | 4 files |
+| Phase 04.1 P01 (bugfix-legal) | 360 | 3 tasks | 1 file |
+| Phase 04.1-bugfix-legal P01 | 360 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -113,6 +115,8 @@ Recent decisions affecting current work:
 - [Phase 04-01]: is_legal_move() now rejects moves where source piece doesn't belong to mover (Rule 1 bug fix)
 - [Phase 04-01]: engine.apply() adds ownership validation before delegating to is_legal_move()
 - [Phase 04-01]: stalemate test board corrected: B_CHE at (0,4) needed to block red king diagonal escape to (8,4)
+- [Phase 04.1-01]: _is_valid_geometry() validates piece-type move geometry BEFORE state.copy() in is_legal_move(); Horse case checks leg square empty; diagonal chariot (9,0)->(8,1) and own-piece capture (9,0)->(9,5) now return False
+- [Phase 04.1-01]: generate_legal_moves() pre-filters own-piece destinations via inline to_sq decode; legal_moves() 29ms -> 0.5ms (58x improvement)
 
 ### Pending Todos
 
@@ -124,6 +128,6 @@ None — Phase 3 complete, Phase 4 context gathered, ready for planning.
 
 ## Session Continuity
 
-Last session: 2026-03-20T15:24:47.834Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-21T03:09:09.380Z
+Stopped at: Completed 04.1-01-PLAN.md
 Resume file: None
