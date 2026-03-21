@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "WebSearch",
+      "Bash(git:*)",
+      "Skill(gsd:discuss-phase)",
+      "Bash(lazygit:*)",
+      "Skill(gsd:verify-work)",
+      "Skill(gsd:plan-phase)",
+      "Skill(gsd:execute-phase)",
+      "Bash(python3:*)",
+      "Bash(conda run:*)",
+      "Bash(source ~/.zshrc)",
+      "Bash(conda activate:*)",
+      "Bash(pytest tests/test_pyffish.py -v)"
+    ]
+  }
+}
