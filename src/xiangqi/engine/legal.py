@@ -347,20 +347,31 @@ def generate_legal_moves(state: XiangqiState) -> List[int]:
         piece = int(state.board[fr, fc])
         pt = abs(piece)
         if pt == 1:
-            moves += gen_general(state.board, piece_sq, state.turn)
+            candidates = gen_general(state.board, piece_sq, state.turn)
         elif pt == 2:
-            moves += gen_advisor(state.board, piece_sq, state.turn)
+            candidates = gen_advisor(state.board, piece_sq, state.turn)
         elif pt == 3:
-            moves += gen_elephant(state.board, piece_sq, state.turn)
+            candidates = gen_elephant(state.board, piece_sq, state.turn)
         elif pt == 4:
-            moves += gen_horse(state.board, piece_sq, state.turn)
+            candidates = gen_horse(state.board, piece_sq, state.turn)
         elif pt == 5:
-            moves += gen_chariot(state.board, piece_sq, state.turn)
+            candidates = gen_chariot(state.board, piece_sq, state.turn)
         elif pt == 6:
-            moves += gen_cannon(state.board, piece_sq, state.turn)
+            candidates = gen_cannon(state.board, piece_sq, state.turn)
         elif pt == 7:
-            moves += gen_soldier(state.board, piece_sq, state.turn)
-    return [m for m in moves if is_legal_move(state, m)]
+            candidates = gen_soldier(state.board, piece_sq, state.turn)
+        else:
+            candidates = []
+        # Pre-filter: skip is_legal_move (and its board copy) for own-piece destinations
+        for m in candidates:
+            to_sq = (m >> 9) & 0x7F
+            tr, tc = sq_to_rc(to_sq)
+            dest_piece = int(state.board[tr, tc])
+            if dest_piece != 0 and (dest_piece > 0) == (piece > 0):
+                continue  # own piece blocks — geometrically invalid, skip board copy
+            if is_legal_move(state, m):
+                moves.append(m)
+    return moves
 
 
 __all__ = [
