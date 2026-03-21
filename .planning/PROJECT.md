@@ -16,6 +16,7 @@
 - [x] Phase 2: 棋子走法与规则校验 (v0.1) — 所有7种棋子的合法走法生成，将军/应将检测 — 94 tests passing
 - [x] Phase 3: 终局判定 (v0.1) — 将死/困毙/和棋规则（含长将/长捉/重复局面）— 30 tests passing
 - [x] Phase 4: API 接口 (v0.1) — XiangqiEngine公共API，FEN往返，undo/redo，perft验证 — 47 tests passing
+- [x] Phase 4.1: Bugfix — is_legal()几何校验，legal_moves()性能优化（29ms→0.54ms）— 47 tests passing
 
 ### Active
 
@@ -56,7 +57,7 @@
 
 **Goal:** 实现完整的中国象棋规则引擎（纯 Python，无 UI、无 RL 接口）
 
-**Status:** ✓ COMPLETE — All 4 phases verified (Phase 04: api-interface completed 2026-03-20)
+**Status:** ✓ COMPLETE — All phases verified (Phase 04: api-interface 2026-03-20; Phase 04.1: bugfix-legal 2026-03-21)
 
 **Scope:** 棋盘表示、合法走法生成、将军检测、终局判定、API接口、测试
 
@@ -66,8 +67,8 @@
 - ✓ 将军检测与应将逻辑（Phase 2）
 - ✓ 胜负判定（将死、困毙、和棋规则）（Phase 3）
 - ✓ XiangqiEngine公共API（Phase 4）
-- ✓ 走法合法性校验API（Phase 4）
-- ✓ 性能优化（每步<100ms）（Phase 4）
+- ✓ 走法合法性校验API（Phase 4, bugfixed 4.1）
+- ✓ 性能优化（legal_moves<10ms实测0.54ms）（Phase 4, bugfixed 4.1）
 - ✓ 199 tests passing across all phases
 
 ## Milestones
