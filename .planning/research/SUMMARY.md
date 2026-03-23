@@ -1,202 +1,177 @@
 # Project Research Summary
 
-**Project:** RL-Xiangqi — Heterogeneous Multi-Agent Reinforcement Learning for Chinese Chess
-**Domain:** Desktop board game with online RL, Apple Silicon MPS, heterogeneous multi-agent architecture
-**Researched:** 2026-03-19
-**Confidence:** MEDIUM-HIGH
+**Project:** RL-Xiangqi v0.2 PyQt6 UI
+**Domain:** Desktop board game UI with pluggable AI
+**Researched:** 2026-03-23
+**Confidence:** HIGH (PyQt6 patterns verified via multiple open-source projects and official docs; engine API confirmed from existing v0.1 codebase; threading patterns are canonical Qt practices)
+
+---
 
 ## Executive Summary
 
-This project builds a desktop Xiangqi (Chinese Chess) application where a heterogeneous multi-agent RL system learns to play from scratch, updating its weights in real time during games against a human opponent on an Apple Silicon M1 Max. The defining architectural idea — that each piece type (General, Advisor, Elephant, Horse, Chariot, Cannon, Soldier) gets its own independent policy network, with proposals coordinated by an arbitration network — is a genuine research novelty. No existing framework or library handles this combination out of the box. The entire stack must be custom-built: a Xiangqi rules engine (no maintained Python library exists), a custom PPO/policy-gradient training loop (Stable-Baselines3 is MPS-incompatible), and a bespoke multi-agent coordination layer. Despite this custom requirement, all component patterns are well-understood and the implementation risk is manageable with careful build ordering.
+RL-Xiangqi v0.2 adds a PyQt6 desktop UI on top of the existing v0.1 XiangqiEngine. The product is a minimal human-vs-AI Chinese Chess board where Red (human) plays first and Black (AI) responds with random legal moves. Experts build board game UIs with `QGraphicsView` + `QGraphicsScene` for rendering, a dedicated controller (not the UI itself) for game state management, and a worker-object pattern for background AI computation. The recommended stack is PyQt6 6.8+ with Python 3.12, using a `GameController` that owns the engine instance and mediates all UI-engine communication via `pyqtSignal`.
 
-The recommended approach is PyTorch 2.10 on native ARM64 Python 3.12 with the MPS backend, PyQt6 for the desktop UI, and a Centralized Training / Decentralized Execution (CTDE) multi-agent architecture. The rules engine must be built and exhaustively tested first — it is the root dependency for every other component. Piece-type agents with separate action spaces feed proposals to a centralized arbitrator, which selects the final move using full board state. Online learning runs in a QThread worker to keep the UI responsive, with a replay buffer spanning at least 5,000–10,000 transitions to prevent catastrophic forgetting. A self-play warm-up phase (200–500 games before human-facing deployment) is required to produce an initial gradient signal from the otherwise sparse terminal reward.
+The biggest risk in this phase is not the UI rendering -- it is threading. The AI must run in a `QThread` worker (via `moveToThread`, never a `QThread` subclass), the engine must never be shared mutable state between threads, and every AI move must be validated against `engine.is_legal()` before `engine.apply()`. Research across all 4 documents converges on one structural decision: the `AIPlayer` / `EngineSnapshot` / `GameController` interface is the most critical deliverable because it is the foundation every future AI (Alpha-Beta, MCTS, RL) plugs into. The UI itself is straightforward by comparison.
 
-The three existential risks to this project are: (1) MPS-specific PyTorch bugs that silently freeze training weights (mitigated by pinning PyTorch >= 2.4 and verifying optimizer state in unit tests), (2) incorrect Xiangqi repetition rules producing corrupted reward signals (mitigated by implementing WXF perpetual-check/chase rules before any RL is connected), and (3) catastrophic forgetting during online learning wiping out accumulated skill (mitigated by a circular replay buffer and checkpoint rollback). Address all three before connecting the training loop to real gameplay.
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The entire ML layer runs on PyTorch 2.10 with the MPS backend, requiring ARM64 native Python 3.12 (Rosetta-emulated Python silently disables MPS with no warning). Stable-Baselines3 is explicitly ruled out due to confirmed float64/MPS incompatibility — the training loop must be custom-built in plain PyTorch, approximately 300 lines for a thin PPO implementation with full MPS control. TorchRL's `MultiAgentMLP(share_params=False)` can provide scaffolding for the heterogeneous-agent bookkeeping without ceding control of the training loop. The UI is PyQt6 with QGraphicsScene/QGraphicsView for board rendering and PyQtGraph for live training metrics (faster than matplotlib for real-time Qt widget updates). All tensor operations must use float32 throughout — MPS does not support float64 or bfloat16 at all.
+PyQt6 6.8+ (minimum) on Python 3.12. PyQt6 6.7.x has Python 3.13 breakage; 6.8+ is fixed. Use `QGraphicsView` + `QGraphicsScene` for the board (built-in hit-testing, layering, coordinate mapping). Use `QGraphicsPixmapItem` for piece sprites with a font fallback stack (BabelStone Xiangqi Unicode font first, then CJK system font, then Chinese characters from the existing engine's `Piece.__str__`). Never use Qt's `QDrag` system for piece movement -- use manual mouse event handling on the graphics items instead. The canonical PyQt threading pattern is a bare `QThread` + a `QObject` worker moved onto it with `moveToThread()`; slots on the worker run in the worker thread.
 
 **Core technologies:**
-- Python 3.12 (ARM64 native): Runtime — MPS requires native ARM64; Rosetta silently disables GPU
-- PyTorch 2.10 + MPS: Deep learning + GPU backend — unified memory eliminates CPU-GPU copies on M1
-- Custom PPO implementation: RL algorithm — only way to guarantee float32 and MPS control
-- Custom Xiangqi rules engine: Game logic — no maintained pure-Python Xiangqi library exists
-- PyQt6 6.10.2: Desktop UI — QGraphicsScene is the correct pattern for interactive board pieces
-- TorchRL 0.7.x (optional): MARL scaffolding — `MultiAgentMLP(share_params=False)` maps to heterogeneous agents
-- PyQtGraph 0.13.x: Live training plots — faster than matplotlib for real-time Qt updates
-- NumPy 2.4.x: Array ops — required for PyTorch 2.10 compatibility (NumPy 1.x causes RuntimeError)
-- gymnasium 1.0.x: Env interface — wraps the rules engine for RL tooling compatibility
-- uv: Package management — reliable ARM64 package resolution on Apple Silicon
+- **PyQt6 6.8+**: UI framework -- `QGraphicsView` for board rendering, `QThread` for AI offloading
+- **Python 3.12**: Project default; fully compatible with PyQt6 6.8+
+- **XiangqiEngine (existing)**: v0.1 engine already provides `apply()`, `legal_moves()`, `is_legal()`, `is_check()`, `result()`, `board` (np.ndarray), `to_fen()` -- zero work needed here
+- **NumPy**: Already in stack; `board.copy()` is the thread-safety boundary for the AI
 
 ### Expected Features
 
-**Must have (table stakes — v1 launch):**
-- Complete Xiangqi rules engine (all 7 piece types, flying general, perpetual-check/chase, stalemate-as-loss)
-- PyQt6 board UI with drag-and-drop, legal move highlighting, turn management
-- Heterogeneous agent networks (7 piece-type policy networks + arbitration network)
-- Proposal + arbitration mechanism selecting the AI's final move
-- Shaped intermediate rewards (material capture delta + basic position score)
-- Online learning loop: lightweight per-step update + deep end-of-game batch update
-- MPS backend with float32 enforcement throughout
-- Model save/load after each game (persistence is required for observable improvement)
-- Observable metrics dashboard (win rate over last N games, episode reward trend)
+**Must have (table stakes):**
+- Board geometry: 9x10 grid, river, two palace diagonal boxes, drawn once as cached `QPixmap` background
+- Piece rendering: read `engine.board` (np.ndarray), place one `QGraphicsPixmapItem` per non-zero square
+- Click-to-select + click-to-move: click own piece to select, click destination to move -- no drag-and-drop in v0.2
+- Legal move highlighting: on piece selection, compute `engine.legal_moves()`, decode destinations, show semi-transparent dot overlays -- the single highest-UX-value feature for the MVP
+- Turn management: toggle after every `apply()`, disable board interaction during AI turn
+- AI move execution: `GameController` QThread calls AI plugin, validates move, applies to engine, signals UI
+- New Game / Reset: `engine.reset()` + re-render all state
+- Game over display: check `engine.result()` after each apply; show status text or dialog
 
-**Should have (competitive differentiators — v1.x):**
-- Move history display with Xiangqi-style notation
-- Experience replay buffer (required to prevent catastrophic forgetting — treat as v1 requirement)
-- Replay/game review using the trained model for intrinsic analysis
-- Piece-level contribution visualization (which agent proposed the winning move)
-- Loss/gradient norm display for developer insight
+**Should have (competitive / worth the effort for v0.2):**
+- Captured pieces display: two panels (one per side) showing captured piece symbols from `apply()` return value
+- In-check visual warning: if `engine.is_check()` is True, flash the General's square or show a status banner
+- Current turn indicator: colored label showing "Red to move" / "Black to move"
 
-**Defer (v2+):**
-- Self-play offline pre-training mode (AI vs. AI)
-- Policy temperature / exploration scheduling
-- Curriculum learning from simplified board configurations
-- Export for benchmarking against pikafish/fairy-stockfish
-- Opening book, PGN import, online multiplayer, MCTS at inference (all anti-features for v1)
+**Defer (v1.0+):**
+- Drag-and-drop (click-to-move is sufficient for v0.2 validation)
+- Move history log (WXF or ICCS notation)
+- Board flip (rotate perspective)
+- Time controls / clocks
+- PGN / XQF game save/load
+- Sound effects
+- Multiple game tabs
+- Hint / undo AI moves
+- Network / online play
 
 ### Architecture Approach
 
-The system has four clearly separated layers: UI (PyQt6 widgets), Game Engine (XiangqiEnv with rules and reward logic), Agent Layer (7 PieceAgent networks + ArbitrationNetwork running CTDE), and Learning Layer (ReplayBuffer, TrainingCoordinator, CentralizedCritic). The GameController QThread is the sole bridge between the UI and the engine/agent layers — no ML code runs on the Qt main thread. Each PieceAgent operates over its own piece-type action space and proposes top-K candidate moves with confidence scores; the ArbitrationNetwork receives the full board state plus all proposals and selects the final action. The CentralizedCritic (used only during training) sees full joint state for stable credit assignment.
+Three-layer separation enforced strictly: **UI layer** (`src/xiangqi/ui/`) owns Qt widgets only and never imports the engine or AI; **Engine layer** (`src/xiangqi/engine/`) is pure Python with zero UI dependencies (already exists from v0.1); **AI layer** (`src/xiangqi/ai/`) receives immutable `EngineSnapshot` dataclasses and returns `Move` objects, never touching the engine. The only layer that imports from all three is `src/xiangqi/controller/` (`GameController` + `GameStateMachine` + `AIWorker`).
 
-**Major components:**
-1. XiangqiEnv — canonical board state, legal move generation, reward shaping, terminal detection; zero ML dependencies; must be tested in isolation first
-2. PieceAgent x7 (Jiang, Shi, Xiang, Ju, Ma, Pao, Zu) — independent policy networks per piece type, each with its own action space and legal-move mask; shared CNN board encoder feeds separate MLP heads
-3. ArbitrationNetwork — selects final action from all candidate proposals using full board state; trained via CTDE with centralized value signal
-4. CentralizedCritic — value network seeing joint state; used for stable advantage estimation during training only
-5. GameController (QThread) — bridges human input and AI move selection off the main thread; communicates via pyqtSignal/pyqtSlot
-6. TrainingCoordinator — schedules per-step lightweight updates and end-of-game deep updates; manages checkpoints and metrics
-7. ReplayBuffer — circular buffer spanning games; tagged with agent_id per transition; prevents catastrophic forgetting
-8. BoardWidget + TrainingPanel — pure presentation layer; receives data only via Qt signals
+The `GameController` owns the engine instance, implements a `GameStateMachine` with states `WAITING_INPUT / AI_THINKING / ANIMATING / GAME_OVER`, and exposes all UI communication through a `GameSignals` object with typed `pyqtSignal` definitions. The `EngineSnapshot` dataclass (frozen, immutable) captures `board.copy()`, `turn`, `legal_moves`, `is_in_check`, `move_history`, `result`, and `fen` at the moment the AI is invoked -- this is the thread-safety boundary. The `AIPlayer` abstract base class defines `suggest_move(snapshot) -> Move | None`; any implementation (RandomAI, AlphaBetaAI, MCTSAI, RLAgent) satisfies this interface with no controller changes.
 
 ### Critical Pitfalls
 
-1. **MPS silent weight freeze (Adam non-contiguous tensor bug)** — PyTorch < 2.4 Adam optimizer silently freezes on MPS when tensors are non-contiguous. Pin PyTorch >= 2.4, call `.contiguous()` before optimizer steps, and write a unit test verifying `exp_avg_sq` is non-zero after 10 gradient steps.
+1. **QThread subclass anti-pattern**: Subclassing `QThread` and putting slots on it causes those slots to run in the main thread. Always use a bare `QThread` + `QObject` worker + `moveToThread()`. Prevention: worker slots run in the thread the QObject lives on.
 
-2. **Incorrect Xiangqi repetition rules** — Perpetual check is a LOSS for the checking side (not a draw). Implementing Western chess 3-fold-repetition-as-draw corrupts all reward signals. Implement WXF rules with test cases for perpetual-check and perpetual-chase positions before connecting any RL training.
+2. **AI returns illegal move**: Any AI implementation can bug out and return an illegal move encoding. The controller MUST call `engine.is_legal(move)` before `engine.apply()`. If illegal, fall back to a random legal move and log at ERROR level. Prevention: two-layer validation is mandatory, not optional.
 
-3. **GUI freeze during inline training** — Running gradient updates on the Qt main thread freezes the board. All training (per-step and end-of-game) must run in a QThread from day one, communicating results back via signals.
+3. **Race condition on engine state**: The AI thread and UI thread share `XiangqiEngine` if the engine reference is passed directly. Always pass a snapshot (`engine.board.copy()` + metadata) to the AI worker; never pass the live engine. Prevention: `EngineSnapshot` dataclass created on the main thread before `moveToThread()`.
 
-4. **Catastrophic forgetting during online learning** — Sequential training on correlated game data overwrites prior knowledge. A circular replay buffer of 5,000–10,000 transitions with 70% recent / 30% historical sampling mix is not optional — it must be in place before the first human-facing session.
+4. **Event loop blocking**: Any AI computation on the main Qt thread freezes the UI. RandomAI is fast enough to inline, but any RL or Alpha-Beta search must use the worker thread. Prevention: worker object + `moveToThread()` from day one, even for RandomAI, so the pattern is established.
 
-5. **Cold-start: no learning signal for hundreds of games** — Random-policy agents playing from scratch rarely achieve checkmate, so terminal rewards never arrive. Implement a 200–500 game self-play warm-up phase with high initial epsilon before enabling human-vs-agent mode.
+5. **Dual sources of truth for board state**: If piece positions live in both `XiangqiEngine.board` and in `QGraphicsItem` attributes, they can diverge after moves or undos. Prevention: treat the engine as the single source of truth; `render_board()` re-reads `engine.board` and rebuilds the scene from scratch after every state change.
 
-6. **Simultaneous heterogeneous agent gradient conflicts** — Updating all 7 piece agents simultaneously from the same trajectory violates MARL stationarity, causing oscillating loss and policy collapse. Use sequential update ordering (e.g., by piece value) with separate optimizers per agent type.
+6. **Stale AI result applied to wrong position**: If a human clicks "Undo" or "Reset" while the AI is thinking, the AI's result is for a position that no longer exists. Prevention: generation counter -- each game/undo increments a counter; AI results carry the generation number; stale results are silently discarded.
 
-7. **Reward shaping overpowers terminal reward** — Material-capture shaping rewards can train agents to collect pieces without winning. Cap shaping at 10-20% of terminal reward magnitude and use potential-based shaping for provable policy-invariance.
-
-8. **Arbitrator bottleneck** — If the arbitrator is too small or receives insufficient context, piece agents learn that their proposals are ignored and gradients collapse. Give the arbitrator the full board state, monitor selection entropy, and train it with centralized value signals.
+---
 
 ## Implications for Roadmap
 
-Based on combined research, the dependency graph mandates a strict build order. The rules engine is the root; agents cannot be wired until state representation is fixed; training cannot start until agents can produce legal moves; the UI can be connected after the game loop works with stub agents. This suggests 5 phases.
+### Phase 1: Board Rendering Shell (static board + pieces)
 
-### Phase 1: Xiangqi Rules Engine + Environment Foundation
+**Rationale:** Validate the visual output before wiring any interaction. Board geometry, coordinate mapping, and piece placement are the foundation -- if these are wrong, everything else is wrong. This phase is independent and low-risk.
 
-**Rationale:** Every other component depends on correct Xiangqi rules. Bugs here corrupt all downstream reward signals and require discarding trained models. The rules engine must be complete and exhaustively tested before any RL code is written. Two of the eight critical pitfalls (repetition rules, incorrect terminal detection) are rules-engine bugs that are catastrophically expensive to fix late.
-**Delivers:** A standalone, fully tested XiangqiEnv with legal move generation for all 7 piece types, flying-general check detection, perpetual-check/chase resolution per WXF rules, stalemate-as-loss, board state tensor representation (14-channel 10x9), and per-piece-type legal move masks.
-**Addresses:** Complete rules engine, legal move validation, board state representation (all foundational table-stakes from FEATURES.md)
-**Avoids:** Pitfall 3 (incorrect repetition rules), Pitfall 1 (rules bugs discovered after training = retrain from scratch)
-**Research flag:** Standard patterns apply. Xiangqi rules are fixed and well-documented; the WXF 2024 paper on repetition rules is the authoritative reference. No additional research phase needed.
+**Delivers:** A `BoardWidget` (`QGraphicsView`) that renders the static board (grid, river, palace diagonals, file/rank labels) as a cached `QPixmap`, and renders all 32 pieces from a hardcoded starting position using `QGraphicsPixmapItem`. No interaction yet.
 
-### Phase 2: PyQt6 Board UI + Human Game Loop
+**Avoids:** Anti-pattern: do NOT wire `engine.board` reads in this phase -- hardcode the starting array so the renderer can be validated independently.
 
-**Rationale:** Wiring a human-playable board against random-policy stub agents validates the full game flow (turn management, drag-drop, win detection, board rerender) before any ML complexity is introduced. This also forces the QThread architecture into place early — the correct threading model must be established before the training loop exists, not retrofitted afterward.
-**Delivers:** A playable human-vs-random-AI desktop application with drag-and-drop, legal move highlighting, turn indicator, game start/restart, and a GameController QThread bridge ready to receive real agent calls.
-**Addresses:** Board UI, drag-and-drop interaction, turn management, legal move highlighting (all P1 table-stakes from FEATURES.md)
-**Avoids:** Pitfall 2 (GUI freeze) — threading model established before training is connected
-**Research flag:** Standard patterns apply. PyQt6 QGraphicsScene for board games is a documented, high-confidence pattern. No additional research needed.
+### Phase 2: Interaction Loop (click-to-select, legal highlighting, click-to-move)
 
-### Phase 3: Heterogeneous Agent Architecture + Arbitration
+**Rationale:** The interaction loop is the core user experience and the most fragile part architecturally. Wire it to the real engine from day one to catch encoding/decoding bugs early. This also validates the coordinate mapping (`px` to `from_sq/to_sq`) against the engine's flat-square convention.
 
-**Rationale:** The 7 piece-type networks + arbitrator is the project's primary technical differentiator and the highest-risk ML design decision. The arbitrator architecture (attention vs. MLP), the shared-encoder vs. independent-encoder choice, and the sequential update ordering for MARL stability must all be decided and tested before training begins. Validating that the proposal + selection loop produces valid legal moves (even with random weights) is the gating condition.
-**Delivers:** 7 PieceAgent policy networks with shared CNN board encoder and piece-specific MLP heads, ArbitrationNetwork receiving full board state + proposals, MultiAgentSystem orchestrating the proposal-select loop, CentralizedCritic for training, and stub training wiring that confirms legal moves are produced every turn.
-**Addresses:** Heterogeneous agent networks, proposal + arbitration mechanism (core P1 differentiators from FEATURES.md)
-**Avoids:** Pitfall 4 (arbitrator bottleneck), Pitfall 8 (simultaneous gradient conflicts) — sequential update ordering and per-agent optimizer separation designed in from the start
-**Research flag:** Deeper research recommended. The proposal + arbitration pattern is novel (no exact published implementation found). The CTDE/HAPPO literature provides theoretical grounding but not a direct implementation reference. Research should focus on: arbitrator loss function design, sequential update ordering implementation, and attention-based vs. MLP arbitrator trade-offs.
+**Delivers:** `BoardWidget` with `mousePressEvent` that emits `(from_sq, to_sq)` pairs. `GameController` with a minimal `apply_user_move()` that calls `engine.is_legal()` then `engine.apply()`. `board_changed` signal triggers `render_board()` from `engine.board`. Legal move highlighting via `engine.legal_moves()` on piece selection. Turn management: disable board when `engine.turn` is Black.
 
-### Phase 4: Training Infrastructure + Online Learning Loop
+**Uses:** `GameSignals` -- define typed `pyqtSignal` objects upfront even though only `board_changed` and `move_applied` are wired in this phase.
 
-**Rationale:** With a working game loop and functional (random-policy) agents, the full learning infrastructure can be built and validated before human-facing deployment. This phase must include the replay buffer, TrainingCoordinator, self-play warm-up procedure, and MPS-specific hardening (contiguous tensor checks, float32 enforcement). The online learning loop cannot go live until all catastrophic-forgetting and cold-start mitigations are in place.
-**Delivers:** Circular replay buffer (5,000–10,000 transitions, agent-tagged), TrainingCoordinator with per-step lightweight update + end-of-game deep update (both in QThread), PPO/policy-gradient training loop (custom, float32, MPS), self-play warm-up runner (200–500 games), checkpoint system with rollback, and MPS health checks (Adam contiguous tensor verification, exp_avg_sq unit test).
-**Addresses:** Online learning loop, MPS backend, model save/load, shaped intermediate rewards (all P1 from FEATURES.md)
-**Avoids:** Pitfall 1 (MPS silent weight freeze), Pitfall 5 (reward hacking), Pitfall 6 (catastrophic forgetting), Pitfall 7 (cold-start no learning signal)
-**Research flag:** Standard patterns for PPO and replay buffers. MPS-specific hardening is well-documented in PyTorch issue tracker. Reward shaping calibration requires empirical tuning — plan for iteration. No formal research phase needed, but budget time for hyperparameter experimentation.
+**Avoids:** Pitfall 5 (dual state) -- render from engine state on every signal. Pitfall 8 (optimistic rendering) -- validate `is_legal()` before any visual update.
 
-### Phase 5: Metrics, Observability + Polish
+### Phase 3: AI Abstraction + GameController + RandomAI
 
-**Rationale:** The metrics dashboard is not cosmetic — it is the mechanism by which the core value proposition (observable AI improvement) becomes visible to users. Without it, the learning happening inside the system is invisible and the product's central promise is undemonstrable. This phase also includes UX hardening (thinking animation, illegal-move feedback, atomic checkpoint saves).
-**Delivers:** Win rate trend panel (PyQtGraph, updates per game), episode reward trend, strength indicator, move history log, asynchronous model save (background thread), thinking animation during AI turn, illegal-move visual feedback, and piece-level contribution display (which agent's proposal was selected).
-**Addresses:** Observable metrics dashboard, move history display, UX polish (P1 and P2 items from FEATURES.md)
-**Avoids:** UX pitfalls (invisible learning, >2s AI response, silent illegal move failure)
-**Research flag:** Standard patterns. PyQtGraph embedding in PyQt6 is well-documented. No additional research phase needed.
+**Rationale:** The AI interface is the most critical deliverable and must be designed before any AI implementation. `AIPlayer` ABC, `EngineSnapshot`, and `Move` must be in place. `GameController` wires engine + AI + state machine together. Black AI plays random legal moves -- this is the end-to-end validation that the threading model works.
+
+**Delivers:** `src/xiangqi/ai/base.py` with `AIPlayer`, `EngineSnapshot`, `Move`. `src/xiangqi/controller/game_controller.py` with `GameStateMachine` (4 states). `src/xiangqi/ai/random_ai.py` implementing `AIPlayer`. `AIWorker(QObject)` that receives `EngineSnapshot`, calls `ai.suggest_move()`, emits `move_ready`. `GameController` wires `user_move_requested` -> `apply()` -> `ai_thinking_started` -> `AIWorker` -> `move_ready` -> `apply()` -> `board_changed`. Generation counter to discard stale results.
+
+**Avoids:** Pitfall 1 (QThread subclass) -- use `moveToThread()`. Pitfall 2 (illegal moves) -- validate before `apply()`. Pitfall 3 (race condition) -- snapshot pass before worker start. Pitfall 4 (event loop block) -- worker thread from day one. Pitfall 6 (tight coupling) -- `AIPlayer` ABC is the only interface the controller knows.
+
+### Phase 4: Game Polish + End-to-End Validation
+
+**Rationale:** Add the remaining UX features that make the board feel complete: captured pieces, in-check warning, game over dialog, new game button. Validate the full human-vs-AI loop with 5+ complete games.
+
+**Delivers:** Captured pieces panels updated from `engine.apply()` return value. In-check banner from `engine.is_check()`. Game over dialog from `engine.result()`. New game resets engine + UI state. Full end-to-end test: 5 complete games with no crashes, no illegal states.
+
+**Avoids:** Pitfall 10 (no test isolation) -- add `MockEngine` for UI unit tests; keep engine unit tests authoritative.
 
 ### Phase Ordering Rationale
 
-- **Rules engine first** because it is the root dependency for every other component and rules bugs discovered after training begin require discarding all trained models.
-- **UI second** (before agents) because a playable human-vs-random-stub game validates the full game flow and forces QThread architecture into place before training is connected.
-- **Agent architecture third** because the proposal + arbitration design is the highest-risk ML decision and must be validated producing legal moves before training infrastructure is built on top of it.
-- **Training infrastructure fourth** because it depends on working agents and must include all catastrophic-forgetting mitigations before the first human-facing game.
-- **Observability last** because it enhances an already-working training loop rather than enabling it, and its complexity is lower.
+Board rendering (Phase 1) must precede any interaction wiring (Phase 2). Interaction wiring against the live engine (Phase 2) must precede AI integration (Phase 3) because AI integration depends on the controller already being able to apply and display moves. Game polish (Phase 4) is last because it depends on all prior phases being wired. The AI interface design (`AIPlayer` / `EngineSnapshot`) belongs in Phase 3, not Phase 2, because the AI interface is the primary deliverable of Phase 3 -- it cannot be an afterthought.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (Heterogeneous Agent Architecture):** The proposal + arbitration pattern is novel with no exact published implementation. Research should focus on arbitrator loss function, attention vs. MLP arbitrator architecture, and sequential update ordering per the HARL framework. The CTDE literature (HAPPO, MAPPO) provides theoretical grounding but not a Xiangqi-specific recipe.
+- **Phase 3 (AI Abstraction)**: The `EngineSnapshot` design and `AIPlayer` protocol are well-specified by research, but the exact signal wiring between `GameController` and `AIWorker` (especially the `request_ai_move` vs `thread.started` pattern) should be validated with a minimal prototype before full implementation.
+- **Phase 4 (Polish)**: Unicode piece rendering with BabelStone Xiangqi font availability and graceful fallback should be validated on the target platform (Windows).
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Rules Engine):** Xiangqi rules are fixed; WXF 2024 paper is authoritative reference.
-- **Phase 2 (PyQt6 UI):** QGraphicsScene board game pattern is well-documented with real-world codebases (PyQtChess, MzChess) as references.
-- **Phase 4 (Training Infrastructure):** Custom PPO on MPS is well-understood; MPS pitfalls are documented in PyTorch issue tracker.
-- **Phase 5 (Observability):** PyQtGraph + PyQt6 integration is standard.
+- **Phase 1 (Board Rendering)**: `QGraphicsView` + `QPixmap` background is a well-documented Qt pattern. `drawBackground()` override or cached pixmap approach is implementation preference.
+- **Phase 2 (Interaction Loop)**: Click-to-select + legal highlighting is a standard board game pattern; the coordinate mapping (`px` <-> flat square index) is confirmed from the existing engine API.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Core choices (PyTorch MPS, PyQt6, custom PPO, NumPy 2.x compatibility) verified across multiple sources. MPS float64/bfloat16 restrictions and SB3 incompatibility are confirmed facts, not speculation. |
-| Features | MEDIUM-HIGH | Table-stakes and MVP scope are clear. Differentiator features (heterogeneous agents, proposal + arbitration) are well-motivated by research but have no directly comparable shipped product to validate against. |
-| Architecture | MEDIUM | CTDE pattern and per-piece action space design are high-confidence. The specific proposal + arbitration mechanism is a novel combination — extrapolated from CTDE + MoE literature with no exact published precedent. Design may require iteration. |
-| Pitfalls | MEDIUM-HIGH | MPS bugs (Adam non-contiguous, clip_grad_norm_ memory leak) are confirmed via PyTorch issue tracker. Xiangqi repetition rules are verified via 2024 academic paper. MARL stationarity issues are confirmed via HARL literature. Cold-start and reward hacking are well-documented RL failure modes. |
+| Stack | HIGH | PyQt6 6.8+ with Python 3.12 confirmed via PyQt community docs and Stack Overflow. QGraphicsView + QThread patterns canonical from Qt official docs and multiple PyQt tutorials. |
+| Features | HIGH | Board game feature set is well-understood; click-to-move vs drag-and-drop trade-off clearly reasoned. Anti-features explicitly defined. |
+| Architecture | HIGH | `GameController` + `GameStateMachine` + `AIWorker` pattern is standard Qt practice. `EngineSnapshot` is GoF Memento pattern. Three-layer separation is clean software engineering. |
+| Pitfalls | HIGH | All 13 pitfalls identified with concrete prevention strategies. Threading patterns verified against official Qt docs, KDAB, and Real Python. |
 
-**Overall confidence:** MEDIUM-HIGH
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Arbitrator loss function:** The correct loss for the arbitration network is underspecified. Options include TD error of game outcome assigned to selection decisions, maximize centralized value estimate of selected move, or REINFORCE with outcome as baseline. This requires empirical investigation during Phase 3.
-- **Reward shaping calibration:** Specific coefficient values for material capture delta and position control rewards require empirical tuning. Budget time in Phase 4 for ablation experiments (shaped vs. unshaped agent over 200 games per the research recommendation).
-- **Self-play warm-up convergence criteria:** The 200–500 game warm-up estimate is a heuristic. The actual criterion (average game length > 30 moves, shaping reward non-zero) should be used to gate transition to human-facing mode, not a fixed game count.
-- **Shared vs. independent board encoder:** Research recommends a shared CNN encoder with piece-specific MLP heads, but the trade-off vs. fully independent networks has not been empirically validated for Xiangqi specifically. Start with shared encoder; benchmark independently if piece specialization fails to emerge.
+- **Piece asset rendering**: Whether to use Unicode chess symbols (U+1FA60 range) with BabelStone Xiangqi font or Chinese characters via system CJK font needs a quick platform test. Implementation should use a font-stack fallback: BabelStone Xiangqi -> Noto Sans CJK SC -> Chinese characters from `Piece.__str__`.
+- **Animation smoothness**: Piece animation duration (200-500ms) and easing are not researched; implementer preference for v0.2. `QPropertyAnimation` or `setPos` in a `QTimer.singleShot` are both viable.
+- **PySide6 vs PyQt6 choice**: STACK.md recommends PyQt6 for ecosystem breadth. If LGPL licensing becomes relevant later, PySide6 is API-compatible and can be swapped without architectural changes.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- PyTorch 2.10 release notes, pytorch.org — MPS backend capabilities and limitations
-- PyTorch GitHub issues — Adam non-contiguous tensor bug on MPS (confirmed for < 2.4)
-- PyTorch GitHub issues (March 2025) — `clip_grad_norm_` memory leak on MPS 2.7.0 / macOS 15.4
-- docs.pytorch.org/rl — TorchRL `MultiAgentMLP(share_params=False)` heterogeneous agent support
-- SB3 team acknowledgment + community reports — Stable-Baselines3 MPS incompatibility
-- PyPI + community reports — NumPy 2.x / PyTorch 2.3.1+ compatibility requirement
-- Qt official documentation — QGraphicsScene/QGraphicsView patterns, QThread signal/slot pattern
-- riverbankcomputing.com — PyQt6 6.10.2 release
+- Qt Official Documentation: QThread + signals/slot threading model (doc.qt.io/qt-6/threads-qobject.html) -- canonical threading rules
+- KDAB: "The Eight Rules of Multithreaded Qt" -- PyQt threading best practices
+- Real Python: "Use PyQt's QThread to Prevent Freezing GUIs" -- worker object pattern
+- PythonGUIs: "Multithreading PyQt6 applications with QThreadPool" -- threading patterns
+- Qt Official: QThread subclassing warning (doc.qt.io/qt-6/qthread.html) -- explicit warning against subclassing
+- python-chess architecture: abstract MoveGen and Board separation -- clean interface design inspiration
+- XiangqiEngine API: confirmed from `src/xiangqi/engine/engine.py` (existing v0.1 codebase) -- HIGH confidence
 
 ### Secondary (MEDIUM confidence)
-- arXiv:2410.04865 — "Mastering Chinese Chess AI (Xiangqi) Without Search" — architecture and training approach
-- arXiv:2304.09870 — Heterogeneous-Agent Reinforcement Learning (HARL framework, sequential update ordering)
-- IJCAI 2024 M2RL Framework — multi-agent cooperative coordination
-- HAPPO/HATRPO (Kuba et al.), MAPPO papers — CTDE pattern for cooperative MARL
-- "A Complete Algorithm for Ruling the WXF Repetition Rules" (2024) — Xiangqi perpetual-check/chase implementation
-- PyQtChess, MzChess, CARA projects — real-world PyQt desktop chess UI patterns
-- AlphaZero (PNAS), IEEE CoG 2019 — shared encoder + policy/value head architecture
+- ChessQ (github.com/walker8088/ChessQ) -- active PyQt Xiangqi project, last updated Feb 2025
+- sahinakkaya/chess PyQt6 implementation -- open-source PyQt chess reference
+- Compart.com: Xiangqi Unicode Characters (U+1FA60-U+1FA6D) -- Unicode range confirmed
+- hartwork/xiangqi-setup -- SVG rendering approach for xiangqi boards
+- Medium: "A Clean Architecture for a PyQt GUI Using the MVP Pattern" -- design pattern article
 
-### Tertiary (LOW confidence)
-- ANNSIM 2024 "Markov Games with Chess" — per-piece agent structure (paper not fully accessible)
-- M2CTS (MoE + MCTS for chess) — researchgate.net (webSearch only, not directly accessed)
-- Proposal + arbitration as novel pattern — extrapolated from CTDE + MoE literature; no exact published implementation
+### Tertiary (LOW-MEDIUM confidence)
+- PyQt6 Python 3.13 compatibility reports (Stack Overflow / forum.qt.io) -- user reports, not official
+- PhysicsKnight MCTS-Minimax -- reference for algorithm structure only
+- game-ai-client PyPI -- generic SDK, not xiangqi-specific
 
 ---
-*Research completed: 2026-03-19*
+
+*Research completed: 2026-03-23*
 *Ready for roadmap: yes*

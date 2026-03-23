@@ -1,262 +1,508 @@
-# Stack Research
+# Technology Stack: PyQt6 Game Board UI
 
-**Domain:** Heterogeneous multi-agent RL board game (Xiangqi / Chinese Chess) with online learning on Apple Silicon
-**Researched:** 2026-03-19
-**Confidence:** MEDIUM-HIGH (core choices verified via multiple sources; some library-specific MPS behavior is still experimental)
-
----
-
-## Recommended Stack
-
-### Core Technologies
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Python | 3.12 | Runtime | Officially recommended for PyTorch MPS on Apple Silicon. ARM64 native build required — Rosetta-emulated x86 Python causes MPS to silently report unavailable. |
-| PyTorch | 2.10.0 | Deep learning backend + MPS GPU | Latest stable (Jan 2026). MPS support for all standard NN ops (matmul, conv, activations, softmax). Unified memory on M1 Max eliminates CPU-GPU copies. Set `PYTORCH_ENABLE_MPS_FALLBACK=1` for ops not yet Metal-kernelized. |
-| PyQt6 | 6.10.2 | Desktop UI: board rendering, drag-drop interaction | Latest stable (Jan 2026). `QGraphicsScene` + `QGraphicsView` + `QGraphicsPixmapItem` is the correct pattern for interactive board pieces. Superior to Tkinter for game UIs; pure Qt bindings give full access to Qt6 widgets. |
-| NumPy | 2.4.x | Array ops, board state representations | PyTorch 2.10 is NumPy 2.x-compatible. Do NOT pin to NumPy 1.x unless forced by another dependency. |
-
-### RL Algorithm Layer
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Custom PPO implementation | — | On-policy online learning | **Do not use Stable-Baselines3** — it has confirmed MPS incompatibility (float64 errors, no auto-detection of MPS device). Build a thin PPO from scratch with PyTorch: policy network, value network, clipped surrogate loss, GAE advantage estimation. ~300 lines, full MPS control. |
-| TorchRL (optional scaffold) | 0.7.x (matches PyTorch 2.10) | Provides `MultiAgentMLP`, replay buffers, rollout collectors | TorchRL's `MultiAgentMLP(share_params=False)` directly maps to the heterogeneous-agent requirement (each piece type gets independent parameters). Use for structural scaffolding; keep custom training loop for MPS control. |
-
-### Xiangqi Rule Engine (v0.1 Milestone)
-
-**Verdict: Write a custom pure-Python engine. Do not adopt an external library as the primary rule source.**
-
-No mature, well-maintained pure-Python Xiangqi library comparable to `python-chess` for standard chess exists on PyPI as of March 2026. The alternatives are either abandoned, have wrong abstraction boundaries for RL (C-backed opaque state), or cover Western chess only. The rule engine for this project is ~500–700 lines of well-tested Python — not a large investment, and full ownership is required for RL observation tensor generation anyway.
-
-| Component | Approach | Notes |
-|-----------|----------|-------|
-| Board state | `np.ndarray` shape `(10, 9)`, `dtype=np.int8` | Integer encoding: 0=empty, 1–7=red pieces, -1 to -7=black pieces (per piece type constants). 10 rows (rank 0=black back rank, rank 9=red back rank), 9 columns. |
-| Move history | Python `list` of `(from_pos, to_pos, captured_piece)` tuples | Enables O(1) undo for check validation and perpetual-check detection. Do NOT copy the full board per move — store deltas. |
-| Legal move generation | Precomputed attack tables + constraint validation | Per-piece lookup tables for static movers (Advisor, Elephant, Soldier), ray tracing for sliders (Chariot), jump+block for Horse and Cannon. Check validation via make-move / in-check / unmove. |
-| Check detection | Scan from General position outward using per-piece attack patterns | Scan for each threat type independently: Chariot/Cannon rays, Horse L-moves, flying General (same-file scan). O(1) with precomputed tables. |
-| Win/draw detection | After legal move generation returns empty set | Checkmate = no legal moves AND in check; Stalemate = no legal moves AND not in check. Both lose for the side with no moves under standard Xiangqi rules. |
-| Repetition / perpetual | Move history + position hash cache | Track FEN-equivalent hashes in a `collections.Counter`. Three-fold repetition with perpetual check = loss for checking side. Full WXF perpetual-chase rules are complex — implement basic perpetual check first, defer full chase detection to v2. |
-
-### Supporting Libraries
-
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| tensorboard | 2.x | Training visualization: loss curves, reward curves, Elo-equivalent metrics | Embed in training loop via `SummaryWriter`. Renders in browser; no notebook required. Use for all per-step and per-episode scalar logging. |
-| matplotlib | 3.9.x | Static plots, episode reward distributions, policy entropy charts | Use for post-hoc analysis and in-app training visualization widgets embedded in PyQt6 via `FigureCanvasQTAgg`. |
-| PyQtGraph | 0.13.x | Live in-app metric plots (loss curves, win rate) during training | PyQtGraph is faster than matplotlib for real-time PyQt6 widget updates. Use for the live training visualization panel inside the desktop app. NumPy 2 compatible as of 0.13.5. |
-| gymnasium | 1.0.x | Standard `Env` interface wrapper around Xiangqi rules engine | Wrapping the game in a `gymnasium.Env` gives compatibility with standard RL tooling and makes the environment testable independently. Required if using TorchRL collectors. |
-| numpy | 2.4.x | Board state arrays, action masking, reward computation | Use `uint8` arrays for board state (avoids float64 MPS errors downstream). |
-| pyffish | 0.0.88 | **Reference oracle for rule engine testing only** — NOT for training env | C++ Fairy-Stockfish Python binding. Supports Xiangqi natively (`sf.legal_moves("xiangqi", fen, moves)`). Use it in pytest fixtures to cross-validate your custom engine's legal move output. Do NOT use as the training environment — its opaque state representation breaks RL observation generation. |
-
-### Development Tools
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| uv | Python package management and virtual environments | Faster than pip, handles Apple Silicon ARM64 package resolution reliably. `uv venv --python 3.12 && uv pip install ...` |
-| pytest | Unit testing rules engine and RL components | Test move generation exhaustively before training — bugs in the rules engine cause silent training divergence. Cross-validate against pyffish for all 7 piece types from all positions. |
-| black + ruff | Code formatting and linting | Ruff replaces flake8/isort. Keep AI/RL code readable; training loops get complex fast. |
+**Project:** RL Xiangqi -- AI-powered Chinese Chess with PyQt6 desktop UI
+**Researched:** 2026-03-23
+**Confidence:** MEDIUM-HIGH (patterns verified across multiple open-source projects and documentation; some PyQt6-specific details require implementation validation)
 
 ---
 
-## Xiangqi Rule Engine: Piece Implementation Guide
+## TL;DR -- The One-Line Decisions
 
-This section documents Xiangqi-specific rules that are easy to get wrong. These are not obvious from Western chess knowledge.
+| Decision | Choice | Reason |
+|----------|--------|--------|
+| Board rendering | `QGraphicsView` + `QGraphicsScene` | Native drag-drop, selection, zoom, layering for highlights |
+| Board drawing | Custom `QGraphicsRectItem` per square + `paint()` override | Clean hit-testing, per-item state, easy highlighting |
+| Piece rendering | `QPixmap` on `QGraphicsPixmapItem` | Fast, scalable, anti-aliased via device pixel ratio |
+| Drag-and-drop | Manual `mousePress`/`mouseMove`/`mouseRelease` on items | Qt's drag-drop system is for file/widget drops; not appropriate for board-piece moves |
+| Architecture | MVP (Model-View-Presenter) | Qt combines View+Controller; MVP adds a clean Presenter that isolates the rule engine from the UI |
+| Threading | `QThread` + `moveToThread()` + `pyqtSignal` | The canonical PyQt threading pattern; keeps AI off the GUI thread |
+| AI interface | Abstract `GameAI` protocol + concrete `AIWorker(QObject)` | Future Alpha-Beta or MCTS plug-ins just implement `compute_best_move(state) -> Move` |
+| Python version | Python 3.12 (or 3.13 with PyQt6 >= 6.8) | PyQt6 6.7.x had Python 3.13 breakage; 6.8+ is fixed |
 
-### Board Geometry
+---
+
+## 1. Board Rendering: QGraphicsView vs QWidget
+
+### Recommendation: QGraphicsView + QGraphicsScene
+
+For a Xiangqi board (10 rows x 9 columns, with palace diagonals and a river), `QGraphicsView` is the correct choice over a raw `QWidget` with `paintEvent`.
+
+| Criterion | QWidget + paintEvent | QGraphicsView + QGraphicsScene |
+|-----------|---------------------|-------------------------------|
+| Drag-and-drop | Manual implementation required | Built-in item selection, hover, drag tracking |
+| Move highlights | Redraw entire board | Overlay highlight items on top of squares |
+| Coordinate mapping | Manual math | `mapToScene()` / `itemAt()` handles it |
+| Animation | Manual QTimer | `QGraphicsItemAnimation` or `setPos` anim |
+| Layering | Manual z-order | Built-in: background squares < pieces < highlights < drag ghost |
+| Zoom/pan | Manual | Built-in via `QGraphicsView` |
+| Hit-testing | Manual `event.pos()` | `itemAt(pos)` returns the exact item |
+| Performance for 90 squares | Fine | Fine (only 90 items) |
+
+**When QWidget IS appropriate:** Static board display, no user interaction, pure image output.
+
+**For Xiangqi specifically:** The board has cross-intersections (not full squares in the corners), palace diagonal marks, and a river. These are all cleanly drawn in a custom `QGraphicsItem.paint()` override. The layering model (board lines below, square fills, piece sprites, highlight overlays, drag shadow) is exactly what QGraphicsScene was designed for.
+
+### Component Architecture
 
 ```
-Rows:  0 = black's back rank (top of board)
-       9 = red's back rank (bottom of board)
-Cols:  0–8 (a–i in coordinate notation)
-
-River: between rows 4 and 5
-Black palace: rows 0–2, cols 3–5
-Red palace:   rows 7–9, cols 3–5
+QGraphicsView (BoardView)
+  └── QGraphicsScene (BoardScene)
+        ├── QGraphicsRectItem[90]  (BoardSquare items -- colored fills, palace marks)
+        ├── QGraphicsLineItem[...] (Grid lines -- drawn once, or baked into background)
+        ├── QGraphicsPixmapItem[32] (Piece sprites -- front or back based on side)
+        ├── QGraphicsRectItem[...]  (Highlight overlays -- legal move dots, last move)
+        └── Custom drag-ghost item  (follows cursor during drag)
 ```
 
-### Piece Movement Rules (all 7 types)
+---
 
-| Piece | Red / Black | Movement | Special Constraints |
-|-------|-------------|----------|---------------------|
-| 帅/将 General | King | 1 step orthogonal | Must stay inside own palace (3×3). Flying General: cannot leave file open to opposing General with no piece between. |
-| 仕/士 Advisor | Guard | 1 step diagonal | Must stay inside own palace. Only 4 valid squares + center. |
-| 相/象 Elephant | Bishop | 2 steps diagonal ("elephant leg") | Cannot cross river. Blocked if the intervening diagonal square ("elephant eye") is occupied. |
-| 马 Horse | Knight | 1 orthogonal + 1 diagonal | Blocked if the orthogonal step square is occupied ("hobbled horse"). Order matters: orthogonal first, then diagonal. |
-| 车 Chariot | Rook | Any number of steps orthogonal | Blocked by intervening pieces. Standard sliding move. |
-| 炮 Cannon | Cannon | Moves like Chariot; captures by jumping exactly one piece | For quiet moves: no pieces between source and target. For captures: exactly one piece (the "screen") between source and target. Two different move types for the same piece. |
-| 兵/卒 Soldier | Pawn | 1 step forward before crossing river; 1 forward or 1 sideways after crossing river | Cannot move backward ever. Promotion-free. |
+## 2. Drawing the Board with QPainter
 
-### Flying General Rule (Critical)
+### Background (drawn once, cached)
 
-After every move, verify that the two Generals do not face each other on the same file with no pieces between them. This is an illegal position. It applies to BOTH sides — a move that exposes your own General to the flying General check is illegal.
+Draw the board grid and decorative elements (river, palace diagonals, file/rank labels) in a single `QPixmap` using `QPainter`, then set it as the `QGraphicsScene` background via `setBackgroundBrush()`. Alternatively, draw it in the `QGraphicsView.drawBackground()` override. Do NOT recreate this on every frame.
 
 ```python
-def flying_general_check(board, red_gen_pos, black_gen_pos):
-    if red_gen_pos[1] != black_gen_pos[1]:
-        return False  # different files, no flying general threat
-    col = red_gen_pos[1]
-    min_row, max_row = min(red_gen_pos[0], black_gen_pos[0]), max(red_gen_pos[0], black_gen_pos[0])
-    for row in range(min_row + 1, max_row):
-        if board[row, col] != 0:
-            return False  # piece blocking line of sight
-    return True  # generals face each other — illegal
+def _build_board_pixmap(self, sq_size: int) -> QPixmap:
+    pixmap = QPixmap(sq_size * 9, sq_size * 10)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+    # Basic grid (vertical lines 9, horizontal lines 10)
+    for col in range(9):
+        x = col * sq_size + sq_size / 2
+        painter.drawLine(int(x), int(sq_size / 2), int(x), int(sq_size * 9 + sq_size / 2))
+
+    for row in range(10):
+        y = row * sq_size + sq_size / 2
+        x1 = sq_size / 2 if row in (0, 9) else sq_size / 2 + sq_size
+        x2 = sq_size * 8 + sq_size / 2 if row in (0, 9) else sq_size * 8 + sq_size / 2
+        painter.drawLine(int(x1), int(y), int(x2), int(y))
+
+    # River (rows 4-5)
+    font = QFont(" serif")
+    font.setPixelSize(int(sq_size * 0.7))
+    painter.setFont(font)
+    painter.drawText(int(sq_size * 2.5), int(sq_size * 4.75), "楚 河")
+    painter.drawText(int(sq_size * 5.5), int(sq_size * 4.75), "漢 界")
+
+    # Palace diagonal marks
+    for (r1, c1, r2, c2) in [(0, 3, 2, 5), (7, 3, 9, 5)]:
+        x1, y1 = c1 * sq_size + sq_size / 2, r1 * sq_size + sq_size / 2
+        x2, y2 = c2 * sq_size + sq_size / 2, r2 * sq_size + sq_size / 2
+        painter.drawLine(int(x1), int(y1), int(x2), int(y2))
+        painter.drawLine(int(x2), int(y1), int(x1), int(y2))
+
+    painter.end()
+    return pixmap
 ```
 
-### Check Detection Algorithm
+### Per-Square Items (interactive, dynamic)
 
-To check whether the side-to-move's General is in check:
+Each of the 90 squares is a `QGraphicsRectItem`. Store `(row, col)` as `setData(0, (row, col))` on each. This makes `itemAt(pos).data(0)` return the coordinates instantly.
 
-1. **Chariot threat**: scan all 4 orthogonal rays from General; any Chariot or enemy General on first unobstructed square is a threat.
-2. **Cannon threat**: scan all 4 orthogonal rays; skip first piece encountered (the screen); if second piece encountered is enemy Cannon, it's a threat.
-3. **Horse threat**: for each of 8 L-move destinations, verify the hobbling square is empty, and the destination holds an enemy Horse.
-4. **Soldier/Advisor/Elephant**: check the specific squares each can reach from the General position (very limited set — precompute as static lookup tables indexed by position and color).
-5. **Flying General**: check as above.
+States per square:
+- **Normal**: light tan fill
+- **Legal move target**: small dot overlay (semi-transparent circle drawn in `paint()`)
+- **Last move** (from/to): soft yellow highlight
+- **In check**: red glow on the General's square
 
-### Performance Target
+### Piece Items
 
-The <100ms per move requirement (from PROJECT.md) is trivially achievable with pure Python + NumPy for a single-step legal move generation. A typical position has 30–50 legal moves. Full legal move generation (all pieces, all moves, check-filtering) in Python takes 0.1–2ms per position. No Cython or C extension is needed for v0.1.
+Each piece is a `QGraphicsPixmapItem` holding a `QPixmap` of the piece sprite. Load PNG sprites at 2x resolution for HiDPI (`devicePixelRatio()`).
 
-If self-play warm-up generates positions at high throughput (SP-01: 200 games), batching calls to the rule engine and keeping board state in NumPy arrays (not Python dicts or objects) will keep it fast enough. Profile before optimizing.
+```python
+class PieceItem(QGraphicsPixmapItem):
+    def __init__(self, piece_type: int, color: int, sq_size: int):
+        super().__init__()
+        self.piece_type = piece_type
+        self.color = color
+        self.sq_size = sq_size
+        self.setPixmap(self._load_sprite())
+        self.setFlag(QGraphicsPixmapItem.GraphicsItemFlag.ItemIsSelectable)
+        self.setFlag(QGraphicsPixmapItem.GraphicsItemFlag.ItemIsMovable)
+        self.setTransformationMode(Qt.TransformationMode.SmoothTransformation)
+        self.setOffset(-sq_size / 2, -sq_size / 2)
+
+    def _load_sprite(self) -> QPixmap:
+        # Return cached QPixmap for this piece type
+        ...
+
+    def itemChange(self, change, value):
+        # Respond to position changes for legal-move validation
+        ...
+```
 
 ---
 
-## Installation
+## 3. Drag-and-Drop: The Correct Approach for Board Games
 
-```bash
-# Create ARM64 native Python 3.12 venv (CRITICAL: must be native ARM64, not Rosetta)
-uv venv .venv --python 3.12
-source .venv/bin/activate
+**Critical finding:** Qt's built-in drag-and-drop system (`QDrag`, `QDropEvent`) is designed for dragging data between widgets or apps -- not for smooth in-board piece movement. Use direct mouse event handling on `QGraphicsItem` instead.
 
-# Verify ARM64 (must print arm64, not x86_64)
-python -c "import platform; print(platform.machine())"
+### The Three-Event Pattern
 
-# Core stack
-uv pip install torch==2.10.0 torchvision torchaudio
+All three events are handled on the piece `QGraphicsItem` subclass:
 
-# Verify MPS is available
-python -c "import torch; print(torch.backends.mps.is_available())"
+```python
+class PieceItem(QGraphicsPixmapItem):
+    def __init__(self, ...):
+        super().__init__()
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsPixmapItem.GraphicsItemFlag.ItemIsSelectable)
+        self.setFlag(QGraphicsPixmapItem.GraphicsItemFlag.ItemIsMovable)
+        # DO NOT set ItemIsDragEnabled -- use manual drag
 
-# UI and visualization
-uv pip install PyQt6==6.10.2 pyqtgraph==0.13.7 matplotlib tensorboard
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
+        if event.button() != Qt.MouseButton.LeftButton:
+            event.ignore()
+            return
+        self.scene().board_controller.start_drag(self, event.scenePos())
+        event.accept()
 
-# RL tooling (optional)
-uv pip install torchrl gymnasium
+    def mouseMoveEvent(self, event: QGraphicsSceneMouseEvent):
+        # Only enter drag mode if mouse has moved > QApplication.startDragDistance()
+        if not self.scene().board_controller.is_dragging:
+            return
+        self.scene().board_controller.update_drag(event.scenePos())
+        event.accept()
 
-# Utilities
-uv pip install numpy
+    def mouseReleaseEvent(self, event: QGraphicsSceneMouseEvent):
+        if not self.scene().board_controller.is_dragging:
+            super().mouseReleaseEvent(event)
+            return
+        target_square = self._snap_to_square(event.scenePos())
+        self.scene().board_controller.end_drag(target_square)
+        event.accept()
 
-# Rule engine testing oracle (dev only)
-uv pip install pyffish
+    def _snap_to_square(self, pos: QPointF) -> tuple[int, int]:
+        col = int(pos.x() // self.sq_size)
+        row = int(pos.y() // self.sq_size)
+        return (max(0, min(row, 9)), max(0, min(col, 8)))
+```
 
-# Dev dependencies
-uv pip install pytest black ruff
+### Visual Feedback During Drag
 
-# MPS fallback (add to shell profile or .env)
-export PYTORCH_ENABLE_MPS_FALLBACK=1
+During drag, the piece follows the cursor (set position in `mouseMove`). Use `setOpacity(0.7)` on the dragged piece. Show the original square with a ghost piece at `opacity=0.3` so the player knows where the piece came from. Draw legal-move squares as colored dots (via `QGraphicsEllipseItem` or painted on the square item).
+
+### Snapping vs Free Positioning
+
+Always snap to grid on release -- pieces snap to the center of the nearest valid square. Do not allow free-form piece placement. If the target is not a legal move, animate the piece back to its original square using `QPropertyAnimation` or `setPos` in a `QTimer.singleShot` loop.
+
+---
+
+## 4. MVP Architecture for Game Board UI
+
+### Why Not MVC
+
+Qt's own Model/View framework (e.g., `QAbstractTableModel`) combines View and Controller into the View widget. This is fine for lists and trees, but for a game board the input logic is complex enough to warrant a separate Presenter layer. Traditional MVC (where the Controller handles all input) also does not fit well with Qt's signal/slot architecture.
+
+### MVP Structure
+
+```
+Presenter (BoardPresenter)
+  - Owns: game state, AI worker, current turn
+  - Receives: user move input, AI move results
+  - Updates: Model (game state) and View (board display)
+  - Signals: move_submitted, ai_thinking, ai_move_ready, game_over
+
+Model (XiangqiGame -- from v0.1 rules engine)
+  - Owns: board state, move history, check/checkmate state
+  - Interface: apply_move(), legal_moves(), undo(), is_game_over()
+  - Signals: state_changed (emitted on every move)
+
+View (BoardView / QGraphicsView)
+  - Owns: QGraphicsScene, piece items, highlight overlays
+  - Receives: Presenter commands (show_board, highlight_moves, animate_ai_move)
+  - Emits: piece_selected, piece_moved (Presenter decides if legal)
+  - Never talks to the AI or the rules engine directly
+```
+
+### Key Signals on the Presenter
+
+```python
+class BoardPresenter(QObject):
+    # Inputs (from View)
+    piece_selected = pyqtSignal(int, int)       # row, col
+    piece_moved = pyqtSignal(int, int, int, int)  # from_r, from_c, to_r, to_c
+
+    # Outputs (to View)
+    board_updated = pyqtSignal()                  # full board redraw
+    highlights_updated = pyqtSignal(list)        # list of (row, col) to highlight
+    ai_thinking = pyqtSignal(bool)               # True=thinking, False=done
+    ai_move_ready = pyqtSignal(tuple)           # (from_r, from_c, to_r, to_c)
+    game_over = pyqtSignal(str)                  # "RED_WINS", "BLACK_WINS", "DRAW"
+```
+
+### View Never Calls the Rules Engine
+
+The View (`BoardScene`) knows only about `(row, col)` coordinates and piece sprites. It does NOT call `legal_moves()`, does NOT check for checkmate. The Presenter intercepts every user action, validates through the Model, and commands the View to update.
+
+---
+
+## 5. AI Interface Abstraction (Critical for Future Plug-in)
+
+### The `GameAI` Protocol
+
+Define an abstract base class (Python `abc.ABC`) that any AI algorithm implements:
+
+```python
+from abc import ABC, abstractmethod
+from typing import Protocol
+import numpy as np
+
+class Move(NamedTuple):
+    from_pos: tuple[int, int]   # (row, col)
+    to_pos:   tuple[int, int]
+    promotion: int | None = None
+
+class GameAI(ABC):
+    """Abstract interface for any Xiangqi AI engine."""
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Display name, e.g. 'Alpha-Beta Depth-4'."""
+        ...
+
+    @abstractmethod
+    def compute_best_move(self, board: np.ndarray, color: int) -> Move | None:
+        """
+        Blocking call -- runs in the AI thread.
+        board: np.ndarray shape (10, 9), dtype=np.int8
+        color: +1 for RED, -1 for BLACK
+        Returns the chosen Move, or None if no legal moves (game over).
+        """
+        ...
+
+    @abstractmethod
+    def abort(self) -> None:
+        """Request abortion of current computation (called from GUI thread)."""
+        ...
+
+    def supports_analysis(self) -> bool:
+        """Override to return True if compute_best_move supports a progress callback."""
+        return False
+```
+
+### Concrete Implementations to Plug In
+
+| AI Type | Implementation | Notes |
+|---------|---------------|-------|
+| **Random** | `RandomAI(GameAI)` | Uniform random over legal moves. Baseline. |
+| **RL Policy** | `RLPolicyAI(GameAI)` | Your trained PPO policy network. Reads board, outputs action logits, samples. |
+| **Alpha-Beta** | `AlphaBetaAI(GameAI)` | Classic depth-limited minimax with move ordering. ~300 lines. |
+| **MCTS** | `MCTSai(GameAI)` | Monte Carlo Tree Search with UCB1 selection. |
+
+### AI Worker Thread Pattern
+
+The AI runs in a dedicated `QThread`. The Presenter does NOT block on AI computation. Communication is entirely via `pyqtSignal` / `pyqtSlot`:
+
+```python
+class AIWorker(QObject):
+    """Runs in a QThread. Owns the GameAI instance. Non-blocking from GUI perspective."""
+
+    thinking_started = pyqtSignal()
+    move_ready = pyqtSignal(tuple)  # Move NamedTuple
+    thinking_finished = pyqtSignal()
+
+    def __init__(self, ai: GameAI):
+        super().__init__()
+        self._ai = ai
+        self._abort_requested = False
+
+    @pyqtSlot(np.ndarray, int)
+    def compute(self, board: np.ndarray, color: int):
+        """Called from Presenter via signal."""
+        self.thinking_started.emit()
+        best_move = self._ai.compute_best_move(board, color)
+        self.thinking_finished.emit()
+        self.move_ready.emit(best_move)
+
+    def abort(self):
+        self._abort_requested = True
+        self._ai.abort()
+
+
+# In Presenter.__init__:
+self._ai_thread = QThread()
+self._ai_worker = AIWorker(RandomAI())  # or AlphaBetaAI(), etc.
+self._ai_worker.moveToThread(self._ai_thread)
+self._ai_thread.start()
+
+# Connect signals:
+self._ai_worker.move_ready.connect(self._on_ai_move_ready)
+self._ai_worker.thinking_started.connect(lambda: self.ai_thinking.emit(True))
+self._ai_worker.thinking_finished.connect(lambda: self.ai_thinking.emit(False))
+
+# To request an AI move (from Presenter.on_turn_changed or after human move):
+@pyqtSlot()
+def request_ai_move(self):
+    board = self._model.get_board()   # np.ndarray
+    color = self._model.current_color
+    # request_ai_move signal is connected to AIWorker.compute slot
+    self.request_ai_move_signal.emit(board, color)
+```
+
+### Hot-Swapping AI Engines
+
+The Presenter holds a `GameAI` reference. To switch from `RandomAI` to `AlphaBetaAI`:
+
+```python
+def set_ai(self, ai: GameAI):
+    self._ai_thread.quit()
+    self._ai_thread.wait()
+    old_worker = self._ai_worker
+    self._ai_worker = AIWorker(ai)
+    self._ai_worker.moveToThread(self._ai_thread)
+    # Reconnect signals...
+    self._ai_thread.start()
+```
+
+This hot-swap is possible because the `GameAI` protocol is the only interface the `AIWorker` depends on.
+
+---
+
+## 6. Threading: Keeping the UI Responsive
+
+### The Canonical PyQt Threading Pattern
+
+**Do NOT subclass `QThread` and override `run()`.** This pattern conflates the thread lifecycle with the worker logic and prevents the standard signal/slot thread-affinity mechanism from working correctly.
+
+**Instead:** Subclass `QObject` as the worker, create a bare `QThread`, move the worker onto it with `moveToThread()`.
+
+```python
+# WRONG pattern (avoid):
+class AIThread(QThread):
+    def run(self):        # Logic lives in the thread subclass -- bad
+        result = self._compute()
+        self.result_ready.emit(result)
+
+# RIGHT pattern (use):
+class AIWorker(QObject):
+    result_ready = pyqtSignal(object)
+    def compute(self):    # Logic in a QObject -- good
+        result = self._compute()
+        self.result_ready.emit(result)
+
+# In setup:
+thread = QThread()
+worker = AIWorker()
+worker.moveToThread(thread)
+worker.result_ready.connect(self._on_result)   # Slot runs in main thread (GUI thread)
+thread.started.connect(worker.compute)          # worker.compute starts when thread starts
+thread.start()
+```
+
+### Signals Cross Threads Automatically
+
+`pyqtSignal` with default `Qt.ConnectionType.AutoConnection` routes slots to the receiver's thread automatically. The AI worker's `move_ready` signal will be delivered to the Presenter's slot in the main thread -- no explicit `QueuedConnection` needed when the receiver is a QObject living in the main thread.
+
+### Thread Safety Rules
+
+- **GUI thread owns all QGraphicsItems.** Never create or modify a `QGraphicsItem` from the AI thread.
+- **Share NumPy arrays between threads safely.** `np.ndarray` with refcount=1 (not shared) is safe to pass across threads. Pass a **copy** (`board.copy()`) to the AI worker, not a reference into the scene's live board.
+- **Use `QMetaObject.invokeMethod`** for thread-safe calls to QObject methods if needed.
+- **`QApplication.processEvents()` in a worker is forbidden.** It will corrupt the event loop.
+
+### Real-Time Considerations for Xiangqi
+
+For RL-assisted play, the AI move computation could take seconds. Show a "thinking" indicator:
+- `ai_thinking.emit(True)` → View shows a pulsing indicator on the AI side's pieces
+- `ai_thinking.emit(False)` → indicator removed
+- The AI worker can also emit periodic progress signals (e.g., every 1000 nodes) so the View can show a depth/evaluation bar without blocking.
+
+---
+
+## 7. Version Requirements
+
+| Package | Minimum Version | Recommended | Python | Notes |
+|---------|----------------|-------------|--------|-------|
+| PyQt6 | 6.8.0 | 6.10.2 | 3.10 -- 3.13 | PyQt6 6.7.x had Python 3.13 breakage (missing sip module). 6.8+ fixed. |
+| PyQt6-sip | 13.8 | latest | 3.10 -- 3.13 | Bundled with PyQt6 on pip install; separate package only needed for custom builds. |
+| PySide6 | 6.8 | 6.9 | 3.10 -- 3.13 | Qt Company's official bindings. LGPL license. Use instead of PyQt6 if GPL is a concern. API is near-identical. |
+| Python | 3.10 | 3.12 | -- | PyQt6 6.8+ fully supports 3.12 and 3.13. Use 3.12 for MPS/RLOPS stack compatibility (existing project constraint). |
+
+### Compatibility Matrix
+
+```
+Python 3.10  -- PyQt6 6.4+  -- Works
+Python 3.11  -- PyQt6 6.5+  -- Works
+Python 3.12  -- PyQt6 6.7+  -- Works (MPS-compatible, project default)
+Python 3.13  -- PyQt6 6.8+  -- Works (6.7.x had breakage, fixed in 6.8)
 ```
 
 ---
 
-## Alternatives Considered
+## 8. Supporting Libraries for the UI
+
+| Library | Purpose | When to Use |
+|---------|---------|-------------|
+| **PyQtGraph 0.13.x** | Live training metric plots in-app | Show Elo/win-rate curves alongside the board during RL training |
+| **matplotlib + FigureCanvasQTAgg** | Static/saved charts | For report generation, not live updates |
+| **NumPy 2.x** | Board state as `np.ndarray` | All board data passed to the AI worker |
+
+---
+
+## 9. Alternatives Considered
 
 | Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Custom rules engine | **pyffish** (Fairy-Stockfish bindings) | As a testing oracle only. pyffish 0.0.88 supports Xiangqi via `sf.legal_moves("xiangqi", fen, moves)` — use in pytest fixtures to cross-validate custom engine output. Never use as training env: opaque C++ state prevents RL observation tensor access. |
-| Custom rules engine | **cotuong.py** (github.com/Ihsara/cotuong.py) | If you want a reference implementation to read. Covers move generation, check/checkmate/draw detection via `GameState` class. Targets Python 3.7, appears unmaintained, no PyPI package. Read the code as a design reference, do not depend on it. |
-| Custom rules engine | **gym-xiangqi** (PyPI) | If you want an OpenAI Gym wrapper and don't need control over internals. Observation space uses integer encoding -16 to +16 per cell, which differs from the (14, 10, 9) channel tensor needed for CNN-based RL. Marked inactive on PyPI (no releases in 12+ months). |
-| Custom PPO | Stable-Baselines3 | Never on this project — SB3 has confirmed float64/MPS incompatibility. Would require forking SB3 internals. |
-| Custom PPO | RLlib (Ray) | If the project scales to distributed training or self-play tournaments needing many parallel workers. Overkill for single-machine human-vs-AI with online learning. |
-| Custom rules engine | Fairy-Stockfish via UCCI | For evaluating AI strength via ELO benchmarking, not for training environment. Fairy-Stockfish is a useful strength reference but not suitable as an RL training environment. |
-| PyQt6 | PySide6 | PySide6 is Qt's official Python binding (LGPL, vs PyQt6's GPL). API is near-identical. Use PySide6 if GPL licensing is a concern for commercial distribution. |
-| PyQt6 | Tkinter | Tkinter cannot handle 90fps board redraw, SVG piece rendering, or embedded matplotlib/PyQtGraph plots cleanly. Inappropriate for this use case. |
-| TorchRL scaffold | Pure custom MARL | Pure custom is fine if TorchRL's `MultiAgentMLP` and collector abstractions are not wanted. TorchRL adds dependencies but reduces boilerplate for heterogeneous multi-agent bookkeeping. |
-| PyQtGraph (live plots) | Matplotlib in PyQt6 | Matplotlib via `FigureCanvasQTAgg` is simpler but slower for live updates. Use matplotlib for static/saved charts, PyQtGraph for in-app live training metrics. |
+|-------------|-------------|------------------------|
+| `QGraphicsView` + `QGraphicsScene` | Raw `QWidget` + `paintEvent` | Only for a static board with zero interactivity (e.g., a puzzle viewer with no drag) |
+| Manual mouse events for drag | Qt `QDrag` system | Never for board-piece moves; QDrag is for inter-widget or inter-app data transfer |
+| PyQt6 | **PySide6** | When LGPL licensing is required; otherwise PyQt6 has a richer ecosystem and more third-party examples |
+| PyQt6 | **DearPyGui | Render-engine UI** | Demos then immediate-mode GUI style does not suit a board game; not suitable |
+| `QGraphicsPixmapItem` for pieces | `QGraphicsSvgItem` for SVG pieces | SVG scales perfectly but adds a QtSvg6 dependency; PNG at 2x device pixel ratio is simpler |
+| Worker QThread | `QThreadPool` + `QRunnable` | `QRunnable` cannot be stopped once started (no abort signal); use worker QThread for cancellable AI computations |
+| PyQtGraph | Matplotlib live updates | Matplotlib is slow for real-time; use PyQtGraph for in-app live plots, matplotlib for export |
 
 ---
 
-## What NOT to Use
+## 10. Recommended Project Structure
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| Stable-Baselines3 | MPS incompatible: float64 tensors not supported by Metal; MPS device not auto-detected; team confirmed no full MPS support | Custom PPO implementation in plain PyTorch |
-| MLX (Apple's framework) | 2–3x faster for LLM inference but NOT PyTorch — would require rewriting all RL logic, losing the PyTorch ecosystem (TorchRL, autograd, standard PPO implementations) | PyTorch 2.10 with MPS backend |
-| torch.compile on MPS | Mature compiler stack (Triton) doesn't target Metal. Complex fusions fall back to CPU or run as unfused Metal kernels. Performance often worse than eager mode on MPS. | Eager mode with `PYTORCH_ENABLE_MPS_FALLBACK=1` |
-| float64 tensors anywhere in RL pipeline | Metal/MPS framework does not support float64 at all — will crash or silently fall to CPU. RL algorithms must use float32 throughout. | Explicitly use `dtype=torch.float32` on all tensor creation; set `torch.set_default_dtype(torch.float32)` at startup |
-| BFloat16 on MPS | Not supported by Metal API (unlike NVIDIA GPUs where it's native). Will error or silently misbehave. | float32 only |
-| Python x86 (Rosetta-emulated) | MPS reports as unavailable under Rosetta; training falls back to CPU with no warning. Common trap on M1 Macs. | ARM64 native Python 3.12 via uv or conda-miniforge |
-| CUDA-specific code paths | No CUDA on M1 Max. Any `torch.cuda.*` call will fail or return False. Use `device = "mps" if torch.backends.mps.is_available() else "cpu"`. | MPS device string with CPU fallback |
-| NumPy < 2.0 with PyTorch 2.10 | Binary incompatibility: PyTorch 2.3.1+ requires NumPy 2.x. Mixing causes `RuntimeError: compiled using NumPy 1.x`. | NumPy 2.4.x |
-| Bitboard representation for Xiangqi rule engine | Xiangqi board is 10×9 = 90 squares; does not fit in a single 64-bit integer. Two-integer bitboard schemes are complex to implement and maintain. Benchmarks show mailbox arrays are competitive with bitboards for this board size, and the mailbox representation maps directly to RL tensors. | `np.ndarray` shape `(10, 9)` mailbox representation |
-| Full WXF perpetual-chase detection in v0.1 | The complete WXF repetition rules (perpetual check + perpetual chase distinction) are notoriously complex — even major commercial apps implement them incorrectly. A Dec 2024 academic paper introduced the first correct implementation for all 110 WXF test cases. This complexity is out of scope for v0.1. | Implement basic three-fold repetition as draw, perpetual check as loss. Defer full WXF chase rules to v2. |
-| cotuong.py as a dependency | Unmaintained (targets Python 3.7), no PyPI package, no recent commits. | Read as reference; write your own. |
-| gym-xiangqi as primary environment | Marked inactive on PyPI, observation space encoding (-16 to +16 integer per cell) is suboptimal for CNN feature extraction, does not produce the (14, 10, 9) channel tensor format needed for the agent architecture. | Custom `gymnasium.Env` wrapper around your own rule engine. |
+```
+src/
+  ui/
+    board_view.py        # QGraphicsView + QGraphicsScene -- board rendering only
+    piece_item.py        # QGraphicsPixmapItem subclass for pieces
+    square_item.py       # QGraphicsRectItem subclass for squares
+    board_presenter.py   # MVP Presenter -- orchestrates Model + View
+  ai/
+    base.py              # GameAI abstract protocol
+    random_ai.py         # Random legal-move AI
+    rl_policy_ai.py      # Trained PPO policy network AI
+    alpha_beta_ai.py     # Depth-limited alpha-beta (future)
+    mcts_ai.py           # MCTS (future)
+    worker.py            # AIWorker -- QObject moved to QThread
+  model/
+    xiangqi_game.py      # XiangqiGame -- v0.1 rule engine, returns board np.ndarray
+    move.py              # Move NamedTuple
+  main.py                # QApplication, window creation, thread startup
+```
 
----
-
-## Stack Patterns by Variant
-
-**For the heterogeneous multi-agent architecture (each piece type = independent agent):**
-- Use `MultiAgentMLP(share_params=False)` from TorchRL, OR manually instantiate one `nn.Module` per piece type (7 types: General, Advisor, Elephant, Horse, Chariot, Cannon, Soldier)
-- Each piece-type network outputs action proposals (logits over legal moves for that piece type)
-- A separate arbiter network (or value-weighted max) selects the final action from all proposals
-- Keep each network small: 3–4 layer MLP with 128–256 hidden units — sufficient for a 10×9 board state
-
-**For online learning (update during human gameplay):**
-- Use a lightweight per-step policy gradient update (REINFORCE with baseline) during the game for immediate responsiveness
-- Use full PPO update (mini-batch gradient steps over the completed episode) at game-end for stable learning
-- Buffer episode trajectory in CPU RAM (not on MPS device) to avoid MPS memory pressure during play
-
-**For board state representation (rule engine → RL pipeline):**
-- Canonical state: `np.ndarray` shape `(10, 9)`, `dtype=np.int8`. Integer per cell: 0=empty, positive=red piece by type ID, negative=black piece by type ID.
-- RL observation tensor: expand to `(14, 10, 9)` float32: one binary channel per piece type per color (7 types × 2 colors). This is the standard AlphaZero-style feature plane format.
-- Conversion: `(board == piece_id).astype(np.float32)` for each of 14 channels. Cast to `torch.tensor` for MPS.
-- This representation is MPS-friendly (float32 after cast, no float64 needed).
-
-**For move representation in RL action space:**
-- Action = `(from_row, from_col, to_row, to_col)` tuple, or equivalently flat index `from_pos * 90 + to_pos` (max 90×90 = 8100 possible actions, most illegal)
-- Use action masking: compute legal moves as a boolean mask over the action space; apply before softmax in policy network
-- Legal move count per position: typically 30–50. Masking keeps the action space tractable.
-
-**If MPS fallback causes training slowdown:**
-- Profile with `PYTORCH_ENABLE_MPS_FALLBACK=1` and `PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0`
-- For ops hitting CPU fallback frequently, consider reimplementing those ops to stay on-device (e.g., replace `torch.multinomial` if it falls back with custom categorical sampling)
+The `board_presenter.py` is the only module that imports both the UI and the model. The AI modules (`ai/`) import only the model (board state). The UI (`ui/board_view.py`) imports only the presenter interface. The model has zero dependencies on either.
 
 ---
 
-## Version Compatibility
+## 11. Gaps to Address in Later Research
 
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| PyTorch 2.10.0 | NumPy 2.4.x | PyTorch >= 2.3.1 required for NumPy 2.x. Earlier PyTorch needs `numpy<2`. |
-| PyTorch 2.10.0 | Python 3.12 | Officially supported. Requires ARM64 native Python on Apple Silicon. |
-| PyQt6 6.10.2 | Python >= 3.9 | No direct NumPy dependency. Compatible with Python 3.12. |
-| PyQtGraph 0.13.x | NumPy 2.x | NumPy 2 compatibility patches merged in 0.13.5+. |
-| TorchRL 0.7.x | PyTorch 2.10.0 | TorchRL versions track PyTorch minor releases. Verify with `pip install torchrl` — it pins to matching PyTorch version. |
-| gymnasium 1.0.x | Python 3.12, NumPy 2.x | Farama Foundation's Gymnasium 1.0 dropped legacy Gym compatibility. Use `gymnasium` not `gym`. |
-| pyffish 0.0.88 | Python 3.11–3.13, macOS/Linux/Windows | Pre-built wheels on PyPI. No Fairy-Stockfish installation required — engine bundled in wheel. |
-| macOS requirement | MPS backend | macOS 12.3 minimum. M1 Max (macOS 15.x as of 2026) is fully supported. |
+- **QPropertyAnimation vs manual setPos in mouseMoveEvent** -- during drag, should the piece position follow the mouse exactly or use a spring/interpolation? Both are viable; implementer preference.
+- **Sound effects** -- QSound or QSoundEffect for piece placement, check, game over. Not researched for this pass.
+- **Game clock** -- `QTimer`-based clock widget with increment support. Not researched.
+- **PGN/XQF file loading** -- out of scope for v0.2 but needed for replay feature.
 
 ---
 
 ## Sources
 
-- Xiangqi board geometry, piece rules, flying general rule — Chess Programming Wiki (chessprogramming.org/Chinese_Chess_Board_Representation) — MEDIUM confidence (domain authoritative but site was not fetchable; content verified via web search summaries)
-- pyffish 0.0.88 Xiangqi support, API functions — PyPI + Fairy-Stockfish GitHub + pychess.org production usage — HIGH confidence
-- WXF perpetual check/chase complexity and Dec 2024 academic paper — arxiv.org/html/2412.17334v1 (Daniel Tan, UC Riverside) — MEDIUM confidence (paper exists, content verified via web search summaries)
-- gym-xiangqi observation space and inactive status — PyPI (inactive label) and GitHub — MEDIUM confidence
-- Bitboard vs mailbox performance parity for Xiangqi — community reports, TalkChess forum discussions — LOW-MEDIUM confidence (empirical, hardware-dependent)
-- Mailbox array → RL tensor mapping approach — AlphaZero paper, community Xiangqi RL implementations — HIGH confidence (widely established pattern)
-- PyTorch MPS status and limitations — WebSearch, multiple sources corroborate — HIGH confidence on float64/BFloat16 restrictions
-- PyTorch 2.10.0 release date — pytorch.org release history — HIGH confidence
-- PyQt6 6.10.2 — PyPI/riverbankcomputing.com — HIGH confidence
-- TorchRL `MultiAgentMLP(share_params=False)` heterogeneous support — docs.pytorch.org/rl — HIGH confidence
-- Stable-Baselines3 MPS incompatibility — multiple community reports + SB3 team acknowledgment — HIGH confidence
-- NumPy 2.x / PyTorch compatibility matrix — PyPI + community reports — HIGH confidence
-- cotuong.py Python 3.7 requirement, unmaintained status — GitHub (Ihsara/cotuong.py) — MEDIUM confidence
-
----
-
-*Stack research for: Heterogeneous multi-agent RL Xiangqi system on Apple Silicon M1 Max*
-*Updated: 2026-03-19 — v0.1 rule engine detail pass added*
+- PyQt6 QGraphicsView architecture and patterns -- pythonguis.com PyQt6 tutorial series -- HIGH confidence
+- Manual drag-and-drop for QGraphicsView chess pieces -- gist.github.com/d23636898739dbc46db16be4e05a86f8 -- HIGH confidence (working code example)
+- Sahinakkaya chess PyQt6 implementation -- github.com/sahinakkaya/chess -- MEDIUM confidence (open-source reference)
+- ChessQ Chinese chess PyQt GUI -- github.com/walker8088/ChessQ -- MEDIUM confidence (xiangqi-specific PyQt reference)
+- MVP pattern for PyQt -- medium.com/@mark_huber "A Clean Architecture for a PyQT GUI Using the MVP Pattern" -- MEDIUM confidence (design pattern article)
+- PyQt6 threading best practices -- realpython.com/python-pyqt-qthread/ -- HIGH confidence (authoritative Python tutorial site)
+- PyQt6 threading worker pattern -- pythonguis.com/tutorials/multithreading-pyqt6-applications-qthreadpool/ -- HIGH confidence
+- Qt threading documentation -- doc.qt.io/qt-6/threads-qobject.html -- HIGH confidence (official docs)
+- PyQt6 Python 3.13 compatibility -- Stack Overflow / forum.qt.io community reports -- MEDIUM confidence (user reports, 2024-2025)
+- game-ai-client PyPI generic AI interface -- pypi.org/project/game-ai-client/0.1.2/ -- LOW-MEDIUM confidence (generic SDK, not xiangqi-specific)
+- PhysicsKnight MCTS-Minimax hybrid -- github.com/physicsKnight/MCTS-Minimax -- LOW-MEDIUM confidence (reference for algorithm structure)

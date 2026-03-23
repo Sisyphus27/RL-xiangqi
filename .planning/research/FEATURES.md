@@ -1,318 +1,465 @@
-# Feature Research
+# Feature Research: Xiangqi PyQt6 UI
 
-**Domain:** Chinese Chess (Xiangqi) Rule Engine v0.1
-**Researched:** 2026-03-19
-**Confidence:** HIGH (based on WXF official rules, academic research, and established engine implementations)
+**Domain:** PyQt6 Desktop UI for Human-vs-AI Xiangqi
+**Context:** v0.3 milestone — working board that validates engine integration and exposes a clean AI plugin interface
+**Researched:** 2026-03-23
+**Confidence:** HIGH (PyQt6 QGraphicsView board pattern is well-established; engine API confirmed from existing codebase)
+
+---
+
+## Scope Note
+
+The existing `.planning/research/FEATURES.md` covers the **rule engine** (v0.1). This document covers **UI features only** (v0.3 milestone). The two are complementary: the UI consumes the engine's `XiangqiEngine` API.
+
+**Engine API already built (v0.1):**
+
+```python
+engine = XiangqiEngine.starting()     # classmethod
+engine.board       # np.ndarray(10, 9) — piece integers
+engine.turn        # +1 (red) / -1 (black)
+engine.legal_moves()    # list[int] — 16-bit encoded moves
+engine.is_legal(move)  # bool
+engine.is_check()       # bool
+engine.result()        # 'RED_WINS'|'BLACK_WINS'|'DRAW'|'IN_PROGRESS'
+engine.apply(move)     # returns captured piece int
+engine.undo()          # reverse last move
+engine.move_history    # list[int]
+engine.to_fen()        # str serialization
+engine.reset()         # restart from starting position
+```
+
+The UI's job is to **visualize** this state, **translate** mouse interactions into encoded moves, and **bridge** to an AI plugin. Not a polished commercial product.
 
 ---
 
 ## Feature Landscape
 
-### Table Stakes (Users Expect These)
+### Table Stakes (Working Human-vs-AI Board)
 
-Features users assume exist in any Xiangqi rule engine. Missing these = engine is unusable.
+These features make the board playable at all. Missing any of these means the board is broken.
 
-| Feature | Why Expected | Complexity | Notes |
+| Feature | Why Required | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Board Representation** | Core data structure for all operations | LOW | 9x10 grid (90 intersections), FEN-like notation support |
-| **Piece Movement Generation** | Each piece has unique movement rules | MEDIUM | 7 piece types with distinct patterns |
-| **General (King) Movement** | Wazir (1-step orthogonal), palace-confined | LOW | Must include "Flying General" rule |
-| **Advisor Movement** | Ferz (1-step diagonal), palace-confined | LOW | Only 5 valid squares per side |
-| **Elephant Movement** | Alfil (2-step diagonal), river-bound | LOW | Blockable at "eye" position |
-| **Horse Movement** | Narrow knight (1 ortho + 1 diag outward) | MEDIUM | Blockable at "leg" position |
-| **Chariot Movement** | Rook (sliding orthogonal) | LOW | Standard sliding piece |
-| **Cannon Movement** | Hopper: slides non-capture, jumps to capture | MEDIUM | Must count exactly one screen for capture |
-| **Soldier Movement** | Forward 1; after river: +sideways | LOW | No backward movement ever |
-| **Move Validation** | Filter pseudo-legal to legal moves | MEDIUM | Must verify king safety after move |
-| **Check Detection** | Determine if General is under attack | MEDIUM | Required for legal move filtering |
-| **Checkmate Detection** | No legal moves to escape check | MEDIUM | Similar to Western chess |
-| **Stalemate Detection** | No legal moves, not in check | LOW | **Critical:** Stalemate = LOSS in Xiangqi |
-| **Flying General Rule** | Kings cannot face on same file | LOW | Immediate win/illegal position check |
-| **Game Over Detection** | Terminal position identification | MEDIUM | Checkmate, stalemate, or draw conditions |
+| **Board geometry** | The 9x10 intersection grid is the core visual primitive | LOW | Vertical lines x9, horizontal lines x10; river gap at rows 4-5; palace diagonal boxes at rows 0-2 and 7-9 |
+| **Piece placement from engine state** | UI must reflect current board array | LOW | Iterate `engine.board`, place piece widgets at each non-empty intersection |
+| **Click-to-select piece** | Only one interaction mode needed for minimum viable product | LOW | Click a piece of the side-to-move → highlight it |
+| **Click-to-move** | Complete the move by clicking destination | LOW | After selecting a piece, click a legal destination to apply the move |
+| **Move application via engine** | The engine owns all rule validation | LOW | `engine.apply(encoded_move)` — if illegal, engine raises `ValueError`; UI shows feedback |
+| **Turn management** | Alternating play is fundamental | LOW | Toggle on every applied move; disable human interaction during AI turn |
+| **Board re-render on state change** | Visual board must track engine state | LOW | After `apply()`, re-render all pieces from `engine.board` |
+| **New Game / Reset** | Basic replayability | LOW | `engine.reset()` + clear move history display + clear captured pieces |
+| **Game over display** | User needs to know when the game ends | LOW | Read `engine.result()` after each move; show modal or status text |
+| **AI move execution** | Human-vs-AI requires AI to respond | MEDIUM | `GameController` QThread calls AI plugin, applies move to engine, signals UI update |
 
-### Differentiators (Competitive Advantage)
+### Nice-to-Have (UX Quality)
 
-Features that distinguish a high-quality engine from a basic one.
+These do not block the board from working but significantly improve usability.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Perpetual Check Detection** | WXF rules: 4 repetitions = loss | HIGH | Requires position history + move classification |
-| **Perpetual Chase Detection** | WXF rules: chasing unprotected piece = loss | HIGH | Most complex rule; many edge cases |
-| **Repetition Draw Detection** | Legal repetition = draw | MEDIUM | Position hashing with occurrence counting |
-| **50/60-Move Rule** | No capture/pawn advance = draw | LOW | Counter-based; 50 moves (WXF) or 60 plies (CXA) |
-| **Insufficient Material Detection** | Neither side can force checkmate | MEDIUM | Static evaluation of material combinations |
-| **Zobrist Hashing** | Fast position hashing for repetition | MEDIUM | Essential for performance at scale |
-| **Incremental Attack Updates** | Update attacked squares after each move | HIGH | Major performance optimization |
-| **Staged Move Generation** | Generate checks/captures first | MEDIUM | Alpha-beta search optimization |
-| **UCCI Protocol Support** | Standard engine communication | MEDIUM | Required for GUI integration |
-| **Move Annotation** | SAN-like notation for moves | LOW | Human-readable move recording |
-| **Game History / PGN** | Record and replay games | MEDIUM | WXF notation format |
-| **Position FEN Import/Export** | Standard position serialization | LOW | Essential for testing and debugging |
+| Feature | Value | Complexity | Notes |
+|---------|-------|------------|-------|
+| **Legal move highlighting** | Prevents users from making illegal moves by accident | LOW | On piece selection, highlight legal-destination intersections via `engine.legal_moves()` |
+| **Drag-and-drop** | Faster play for experienced users | MEDIUM | Override `mouseMoveEvent` on `QGraphicsView`; snap piece to nearest intersection on release |
+| **Captured pieces display** | Shows game progress and material balance | LOW | Maintain two lists (red captured, black captured); update on each `apply()` return value |
+| **Current turn indicator** | Shows whose move it is at a glance | LOW | Colored label or piece count in sidebar: "Red to move" / "Black to move" |
+| **In-check visual warning** | Critical game state signal | LOW | If `engine.is_check()` is True, flash the king's square or show a status banner |
+| **Move history log** | Reference during and after play | MEDIUM | List widget showing WXF or ICCS notation per move; decoded from `engine.move_history` |
+| **Board flip** | Black-side perspective for review | LOW | Rotate `QGraphicsView` 180 degrees via `QTransform.rotate(180)` |
 
-### Anti-Features (Commonly Requested, Often Problematic)
+### Anti-Features
 
-Features that seem useful but create problems or violate Xiangqi rules.
+Features to explicitly NOT build for v0.3. Adding them wastes time and adds scope risk.
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **Stalemate as Draw** | Western chess convention | Violates Xiangqi rules; stalemate is LOSS | Implement correct Xiangqi stalemate = loss |
-| **Simplified Repetition (3-fold draw)** | Western chess convention | Xiangqi has complex repetition rules with win/loss/draw outcomes | Implement full WXF repetition classification |
-| **Allow Illegal Moves** | "Training mode" idea | Corrupts game state, breaks RL training | Strict validation always; use "analysis mode" for exploration |
-| **Custom Piece Values** | "Balance the game" | Xiangqi has established balance; changes break standard play | Use standard piece values for RL rewards |
-| **Time Control in Engine** | "Complete game management" | Engine should be stateless; time belongs to UI/arbitrator | Keep engine focused on rules; UI handles time |
-| **Opening Book Integration** | "Better play from start" | Project goal is pure RL learning from zero | Defer to post-training; engine should be rule-only |
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|--------------------|
+| **Time controls / clocks** | Not needed for AI-vs-human validation; belongs to competitive play | Defer to v1.0+ |
+| **PGN/WXF game save/load** | Nice but not required to validate engine integration | Implement only if time remains |
+| **Multiple game tabs** | Over-architecture for a single-board AI validator | One board, one game at a time |
+| **Sound effects** | Distracting for RL development workflow | Never |
+| **Settings dialogs** | Config that the engine/AI should own | Keep hardcoded defaults |
+| **Hint / undo AI moves** | Confuses the AI-vs-human validation model | Defer to v1.0+ |
+| **Network / online play** | Anti-feature for a local AI training tool | Never |
+
+---
+
+## Feature Details
+
+### 1. Board Geometry
+
+The xiangqi board is a 9-column by 10-row grid of **intersection points**, not grid cells.
+
+**Coordinate system (from existing engine):**
+```
+Rows: 0 = black's back rank (top of display)
+      9 = red's back rank (bottom of display)
+Cols: 0–8 (left to right from red's perspective)
+```
+
+**Drawing elements:**
+- 9 vertical lines, 10 horizontal lines → 90 intersection points
+- River band between rows 4 and 5 (horizontal gap with "楚河汉界" text)
+- Palace box: rows 0–2, cols 3–5 (black's palace, top)
+- Palace box: rows 7–9, cols 3–5 (red's palace, bottom)
+- Palace diagonal lines: connect (row,3)↔(row+2,5) and (row+2,3)↔(row,5) for both palaces
+- Optional: small tick marks at the 5 palace intersection points
+
+**Recommended rendering approach:**
+Override `QGraphicsView.drawBackground()` or paint on a dedicated `QGraphicsPixmapItem` background. Use `QPainter` to draw all lines, the river band, and palace diagonals once. Cache the result as a `QPixmap` so the board background does not need to be repainted on every interaction.
+
+```python
+def _paint_board_background(self, painter: QPainter, rect: QRectF):
+    """Paint all static board elements: grid, river, palace diagonals."""
+    pen = QPen(QColor("#8B4513"), 2)
+    painter.setPen(pen)
+
+    # Vertical lines (9 columns)
+    for col in range(9):
+        x = self._col_to_x(col)
+        painter.drawLine(x, self._row_to_y(0), x, self._row_to_y(9))
+
+    # Horizontal lines (10 rows) — broken at cols 3 and 6 in rows 3 and 6 (palace top/bottom)
+    for row in range(10):
+        y = self._row_to_y(row)
+        start_col = 0
+        end_col = 9
+        # Palace: rows 0-2 (black palace) and 7-9 (red palace) break at cols 3 and 6
+        if row in (0, 2, 7, 9):
+            painter.drawLine(self._col_to_x(0), y, self._col_to_x(3), y)
+            painter.drawLine(self._col_to_x(5), y, self._col_to_x(8), y)
+        elif row == 1 or row == 8:
+            # Palace corners connect diagonally
+            pass
+        else:
+            painter.drawLine(self._col_to_x(start_col), y, self._col_to_x(end_col - 1), y)
+
+    # Palace diagonals
+    # Black palace (rows 0-2): (0,3)-(2,5) and (0,5)-(2,3)
+    painter.drawLine(self._col_to_x(3), self._row_to_y(0), self._col_to_x(5), self._row_to_y(2))
+    painter.drawLine(self._col_to_x(5), self._row_to_y(0), self._col_to_x(3), self._row_to_y(2))
+    # Red palace (rows 7-9): same diagonals at rows 7-9
+    painter.drawLine(self._col_to_x(3), self._row_to_y(7), self._col_to_x(5), self._row_to_y(9))
+    painter.drawLine(self._col_to_x(5), self._row_to_y(7), self._col_to_x(3), self._row_to_y(9))
+
+    # River text
+    font = QFont("Serif", 14, QFont.Bold)
+    painter.setFont(font)
+    painter.drawText(self._board_rect, Qt.AlignmentFlag.AlignCenter, "楚河汉界")
+```
+
+**Coordinate mapping:**
+```python
+def _row_to_y(self, row: int) -> float:
+    return self._top_margin + row * self._cell_size
+
+def _col_to_x(self, col: int) -> float:
+    return self._left_margin + col * self._cell_size
+
+def _xy_to_rc(self, x: float, y: float) -> Tuple[int, int] | None:
+    """Convert pixel coordinates to (row, col) or None if outside tolerance."""
+    col = round((x - self._left_margin) / self._cell_size)
+    row = round((y - self._top_margin) / self._cell_size)
+    if 0 <= row < 10 and 0 <= col < 9:
+        return row, col
+    return None
+```
+
+### 2. Piece Representation
+
+Two viable approaches, ranked by recommendation:
+
+**Approach A: Unicode Chess Symbols (Recommended for MVP)**
+
+Unicode 11.0 (2018) added xiangqi pieces in the Chess Symbols block U+1FA60–U+1FA6D:
+
+| Piece | Red Unicode | Black Unicode |
+|-------|------------|--------------|
+| General | U+1FA60 (🩠) | U+1FA67 (🩧) |
+| Advisor | U+1FA61 (🩡) | U+1FA68 (🩨) |
+| Elephant | U+1FA62 (🩢) | U+1FA69 (🩩) |
+| Horse | U+1FA63 (🩣) | U+1FA6A (🩪) |
+| Chariot | U+1FA64 (🩤) | U+1FA6B (🩫) |
+| Cannon | U+1FA65 (🩥) | U+1FA6C (🩬) |
+| Soldier | U+1FA66 (🩦) | U+1FA6D (🩭) |
+
+**Implementation:** `QGraphicsSimpleTextItem` with a font that supports the Chess Symbols block. The [BabelStone Xiangqi font](https://www.babelstone.co.uk/Fonts/Xiangqi.html) covers the full block and is free. Fall back to traditional Chinese characters (帥仕相馬車炮兵 / 将士象马车炮卒) rendered via `QGraphicsTextItem` with a CJK font — these are already defined in the existing engine's `Piece.__str__` method.
+
+**Font stack for broad compatibility:**
+```python
+# Primary: Unicode chess symbols with BabelStone Xiangqi
+# Fallback: Chinese characters with system CJK font
+font = QFont("BabelStone Xiangqi", size)
+if not QFontInfo(font).exactMatch():
+    font = QFont("Noto Sans CJK SC", size)   # or "Microsoft YaHei" on Windows
+piece_item.setFont(font)
+piece_item.setText("\U0001fa60")   # Red General
+```
+
+**Approach B: SVG Piece Graphics**
+
+Higher visual quality but adds asset management. See the [xiangqi-setup](https://github.com/hartwork/xiangqi-setup) project for SVG piece sets. Use `QGraphicsSvgItem` wrapped in a `QGraphicsItemGroup` for centering. SVG pieces are the approach taken by [ChessQ](https://github.com/walker8088/ChessQ) (a production PyQt Xiangqi app). For v0.3 MVP, Approach A is faster to implement.
+
+**Piece rendering from engine board:**
+```python
+_PIECE_TO_UNICODE = {
+    Piece.R_SHUAI: "\U0001fa60", Piece.R_SHI: "\U0001fa61",
+    Piece.R_XIANG: "\U0001fa62", Piece.R_MA: "\U0001fa63",
+    Piece.R_CHE: "\U0001fa64",  Piece.R_PAO: "\U0001fa65",
+    Piece.R_BING: "\U0001fa66",
+    Piece.B_JIANG: "\U0001fa67", Piece.B_SHI: "\U0001fa68",
+    Piece.B_XIANG: "\U0001fa69", Piece.B_MA: "\U0001fa6a",
+    Piece.B_CHE: "\U0001fa6b",   Piece.B_PAO: "\U0001fa6c",
+    Piece.B_ZU: "\U0001fa6d",
+}
+
+def render_board(self, board: np.ndarray):
+    """Remove all piece items, then place a piece at each non-empty square."""
+    for item in self._scene.items():
+        if isinstance(item, PieceGraphicsItem):
+            self._scene.removeItem(item)
+    for row in range(ROWS):
+        for col in range(COLS):
+            piece_val = board[row, col]
+            if piece_val != 0:
+                item = PieceGraphicsItem(piece_val, row, col)
+                self._scene.addItem(item)
+```
+
+### 3. Captured Pieces Display
+
+Maintain two `QGridLayout` or `QVBoxLayout` panels — one per side — showing captured pieces grouped by type. Update whenever `engine.apply()` returns a non-zero captured value.
+
+**Recommended layout:**
+```
+┌─────────────────────────────┐
+│  Captured by Red  [兵 兵 炮] │
+│  Captured by Black [車 馬]   │
+└─────────────────────────────┘
+```
+
+**Implementation:** Use `QListWidget` with one item per captured piece, or a `QHBoxLayout` of small `QLabel` widgets. When a piece is captured, append it to the appropriate panel. Sort captured pieces by value (Chariot first, Soldier last) for quick material assessment.
+
+```python
+def on_move_applied(self, captured_piece: int):
+    """Update captured pieces panel after engine.apply()."""
+    if captured_piece == 0:
+        return
+    color = "Red" if captured_piece > 0 else "Black"
+    panel = self._captured_by_red if captured_piece > 0 else self._captured_by_black
+    unicode_char = _PIECE_TO_UNICODE.get(captured_piece, "?")
+    panel.addWidget(QLabel(unicode_char))   # styled to match piece color
+```
+
+### 4. Turn Indicator
+
+Simple text label in the sidebar or status bar. State derives entirely from `engine.turn`.
+
+```python
+def update_turn_indicator(self):
+    color = "Red" if self._engine.turn == +1 else "Black"
+    self._turn_label.setText(f"{color} to move")
+    # Style the label: red text for red turn, dark for black
+    palette = self._turn_label.palette()
+    palette.setColor(QPalette.WindowText,
+                     QColor("#c41e3a") if self._engine.turn == +1 else QColor("#1a1a1a"))
+    self._turn_label.setPalette(palette)
+```
+
+### 5. Legal Move Highlighting
+
+On piece selection, call `engine.legal_moves()`, decode each move to `to_sq`, and overlay highlights on destination intersections. This is the single highest-value UX feature for a working board — it eliminates guesswork about legal moves.
+
+**Cache at turn start, not per-click:**
+```python
+def on_piece_selected(self, row: int, col: int):
+    # Only compute highlights when a piece is clicked
+    all_legal = self._engine.legal_moves()
+    from_sq = row * 9 + col
+    destinations = set()
+    for move in all_legal:
+        if (move & 0x1FF) == from_sq:
+            to_sq = (move >> 9) & 0x7F
+            tr, tc = divmod(to_sq, 9)
+            destinations.add((tr, tc))
+    self._show_highlights(destinations)
+```
+
+**Highlight rendering:** `QGraphicsEllipseItem` at each destination, filled with semi-transparent green (`rgba(0, 200, 0, 80)`). Clear highlights on any subsequent click.
+
+### 6. Game State Display
+
+**In-check warning:** If `engine.is_check()` returns True after a move, display a status banner or flash the king's square in red. This is the most important game-state signal.
+
+**Game over:** After each `engine.apply()`, check `engine.result()`. If not `'IN_PROGRESS'`:
+
+```python
+def on_engine_updated(self):
+    result = self._engine.result()
+    if result != 'IN_PROGRESS':
+        self._show_game_over_dialog(result)
+```
+
+**Game over dialog:** `QMessageBox` or a styled `QDialog` showing the result ("Red Wins", "Black Wins", "Draw") and a "New Game" button. Disable board interaction.
+
+### 7. Clean Reset / New Game Flow
+
+One button that resets everything to initial state:
+
+```python
+def new_game(self):
+    self._engine.reset()
+    self._captured_by_red.clear()
+    self._captured_by_black.clear()
+    self._move_history.clear()
+    self._render_board()
+    self._update_turn_indicator()
+    self._clear_highlights()
+    self._status_label.setText("New game — Red to move")
+    # Re-enable board interaction
+    self._set_interaction_enabled(True)
+```
+
+### 8. AI Plugin Interface
+
+The board must expose a clean interface for plugging in any AI agent. The existing architecture defines this as a `GameController` QThread.
+
+**Interface contract:**
+```python
+class AIAgent(ABC):
+    """Abstract interface that any AI plugin must implement."""
+
+    @abstractmethod
+    def select_move(self, engine: XiangqiEngine) -> int:
+        """Given the current engine state, return an encoded move (int).
+        Must return a legal move. Raises if no legal moves exist."""
+        ...
+```
+
+**QThread integration pattern:**
+```python
+class GameController(QThread):
+    move_ready = pyqtSignal(int)          # AI has chosen a move
+    thinking_started = pyqtSignal()
+    thinking_finished = pyqtSignal()
+
+    def __init__(self, engine: XiangqiEngine, agent: AIAgent):
+        super().__init__()
+        self._engine = engine
+        self._agent = agent
+
+    def request_move(self):
+        """Called by UI when it's the AI's turn."""
+        self.start()   # runs self.run() in a QThread
+
+    def run(self):
+        self.thinking_started.emit()
+        move = self._agent.select_move(self._engine)
+        self.move_ready.emit(move)    # emitted in the QThread
+        self.thinking_finished.emit()
+```
+
+**UI slot:**
+```python
+class BoardWidget:
+    def _on_ai_move_ready(self, move: int):
+        try:
+            captured = self._engine.apply(move)
+            self._render_board()
+            self._update_turn_indicator()
+            self._update_captured(captured)
+            self._check_game_over()
+            self._set_interaction_enabled(True)
+        except ValueError:
+            # AI returned an illegal move — log and retry
+            logging.error(f"AI returned illegal move {move}")
+```
 
 ---
 
 ## Feature Dependencies
 
 ```
-Board Representation
-    |--requires--> Piece Definitions
-    |                  |--requires--> Movement Patterns
-    |
-    |--requires--> Position Validation
-    |                  |--requires--> Flying General Check
-    |
-    |--requires--> Move Generation
-    |                   |--requires--> Pseudo-legal Generation
-    |                   |                  |--requires--> General Movement
-    |                   |                  |--requires--> Advisor Movement
-    |                   |                  |--requires--> Elephant Movement
-    |                   |                  |--requires--> Horse Movement
-    |                   |                  |--requires--> Chariot Movement
-    |                   |                  |--requires--> Cannon Movement
-    |                   |                  |--requires--> Soldier Movement
-    |                   |
-    |                   |--requires--> Legal Move Filtering
-    |                                  |--requires--> Check Detection
-    |                                                 |--requires--> Attack Detection
+Board Rendering
+    |--requires--> Board geometry (grid, river, palace)
+    |--requires--> Piece placement from engine.board
+    |--requires--> Coordinate mapping (px <-> rc)
 
-Check Detection
-    |--requires--> Sliding Piece Attacks (Chariot, Cannon)
-    |--requires--> Leaper Attacks (Horse, Elephant)
-    |--requires--> Hopper Attacks (Cannon capture)
+Piece Selection
+    |--requires--> Click-to-select handler (mousePressEvent)
+    |--requires--> Turn-aware: only select current player's pieces
+    |--requires--> Legal move highlighting (on selection)
 
-Checkmate Detection
-    |--requires--> Legal Move Generation
-                       |--requires--> Check Detection
+Move Application
+    |--requires--> Click-to-move handler (mousePressEvent on highlighted square)
+    |--requires--> Move encoding: (row, col) -> 16-bit engine move
+    |--requires--> engine.apply(move) — raises on illegal
+    |--requires--> Board re-render after apply()
 
-Stalemate Detection
-    |--requires--> Legal Move Generation
+AI Integration
+    |--requires--> GameController QThread (never block UI thread)
+    |--requires--> AIAgent plugin interface
+    |--requires--> pyqtSignal/pyqtSlot bridge (QThread -> UI thread)
+    |--requires--> Turn management (disable human input during AI thinking)
 
-Repetition Detection
-    |--requires--> Zobrist Hashing
-    |                  |--requires--> Board Representation
-    |--requires--> Position History
+Game State
+    |--requires--> engine.is_check() — in-check warning
+    |--requires--> engine.result() — game over detection
+    |--requires--> engine.reset() — new game
 
-Perpetual Check/Chase Detection
-    |--requires--> Repetition Detection
-                       |--requires--> Move Nature Classification
-                                          |--requires--> Check Detection
-                                          |--requires--> Chase Detection
-
-Game Over Detection
-    |--requires--> Checkmate Detection
-    |--requires--> Stalemate Detection
-    |--requires--> Repetition Detection
-    |--requires--> Insufficient Material Detection
+Captured Pieces
+    |--requires--> engine.apply() return value (captured piece int)
+    |--requires--> Two-panel layout (one per side)
 ```
 
-### Dependency Notes
+---
 
-- **Legal Move Filtering requires Check Detection:** After making a pseudo-legal move, must verify own king is not in check
-- **Check Detection requires Attack Detection:** Must determine all squares attacked by opponent
-- **Perpetual Check/Chase requires Move Nature Classification:** Each move must be classified as check/chase/idle
-- **Cannon is unique:** Requires both sliding (non-capture) and hopper (capture) attack detection
+## MVP Recommendation
+
+**Build in this order for v0.3:**
+
+1. **Board geometry only** — static background rendering. Verify it looks correct before adding pieces.
+2. **Static piece placement** — read `engine.board`, place all pieces. No interaction yet.
+3. **Click-to-select + legal move highlighting** — wire `engine.legal_moves()` to highlight overlays.
+4. **Click-to-move + engine.apply()** — complete the human move loop.
+5. **Turn management** — toggle on each apply, disable input during AI turn.
+6. **AI plugin interface + GameController QThread** — stub agent returning a random legal move.
+7. **New Game / Reset** — one-button restart.
+8. **Captured pieces display** — update on each apply.
+9. **In-check + game over** — `engine.is_check()` and `engine.result()` wired to UI.
+10. **Human-vs-stub-AI end-to-end test** — play 5 full games, verify no crashes or illegal state.
+
+**Defer:** Drag-and-drop (click-to-move is sufficient for v0.3), board flip, move history log.
 
 ---
 
-## MVP Definition
+## Architecture Integration Points
 
-### Launch With (v0.1)
+The UI layer sits above the v0.1 `XiangqiEngine`. Key integration points:
 
-Minimum viable rule engine for RL training to begin.
-
-- [x] **Board Representation** — Foundation for all operations; 9x10 grid with piece placement
-- [x] **All 7 Piece Movement Rules** — Complete pseudo-legal move generation
-- [x] **Flying General Rule** — Critical Xiangqi-specific rule
-- [x] **Legal Move Validation** — Filter pseudo-legal to legal (king safety check)
-- [x] **Check Detection** — Determine if General is under attack
-- [x] **Checkmate Detection** — Terminal condition for game end
-- [x] **Stalemate Detection** — Terminal condition (LOSS for stalemated side)
-- [ ] **Basic Repetition Detection** — Detect 4-fold repetition (as draw for MVP)
-- [ ] **50-Move Rule** — Draw by no capture/pawn advance
-
-### Add After Validation (v0.2)
-
-Features to add once core engine is stable and RL training is working.
-
-- [ ] **Perpetual Check Detection (WXF)** — Loss for 4 consecutive checks
-- [ ] **Perpetual Chase Detection (WXF)** — Loss for 4 consecutive chases
-- [ ] **Zobrist Hashing** — Performance optimization for repetition detection
-- [ ] **Insufficient Material Detection** — Automatic draw for unwinnable positions
-- [ ] **UCCI Protocol Support** — Interface with standard Xiangqi GUIs
-
-### Future Consideration (v1.0+)
-
-Features to defer until core RL system is proven.
-
-- [ ] **Full WXF Notation Support** — Complete game recording format
-- [ ] **Opening/Endgame Tablebase Detection** — For perfect play in known positions
-- [ ] **Transposition Table Integration** — For engine search (not needed for RL)
-
----
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Board Representation | HIGH | LOW | P1 |
-| Piece Movement (7 types) | HIGH | MEDIUM | P1 |
-| Flying General Rule | HIGH | LOW | P1 |
-| Legal Move Validation | HIGH | MEDIUM | P1 |
-| Check/Checkmate Detection | HIGH | MEDIUM | P1 |
-| Stalemate Detection | HIGH | LOW | P1 |
-| Basic Repetition (4-fold draw) | MEDIUM | MEDIUM | P1 |
-| 50-Move Rule | MEDIUM | LOW | P1 |
-| Perpetual Check (WXF) | HIGH | HIGH | P2 |
-| Perpetual Chase (WXF) | HIGH | HIGH | P2 |
-| Zobrist Hashing | MEDIUM | MEDIUM | P2 |
-| Insufficient Material | MEDIUM | MEDIUM | P2 |
-| UCCI Protocol | LOW | MEDIUM | P2 |
-| WXF Notation | LOW | MEDIUM | P3 |
-
-**Priority Key:**
-- P1: Must have for v0.1 launch
-- P2: Should have for v0.2 (full rule compliance)
-- P3: Nice to have, future consideration
-
----
-
-## Competitor Feature Analysis
-
-| Feature | xiangqi.js | Orange-Xiangqi | Fairy-Stockfish | Our Approach |
-|---------|------------|----------------|-----------------|--------------|
-| Move Generation | Complete | Complete | Complete | Complete (P1) |
-| Check/Checkmate | Complete | Complete | Complete | Complete (P1) |
-| Stalemate | Complete | Complete | Complete | Complete (P1) |
-| Flying General | Complete | Complete | Complete | Complete (P1) |
-| Perpetual Check | Partial | Complete | Partial | P2 (v0.2) |
-| Perpetual Chase | No | Complete | No | P2 (v0.2) |
-| Repetition Draw | Complete | Complete | Complete | P1 (basic) |
-| 50-Move Rule | Complete | Complete | Complete | P1 |
-| Zobrist Hashing | Yes | Yes | Yes | P2 |
-| UCCI Protocol | No | Yes | Yes | P2 |
-| NNUE Evaluation | No | Yes | Yes | N/A (RL project) |
-
----
-
-## Piece Movement Reference
-
-### Movement Patterns by Piece Type
-
-| Piece | Betza Notation | Movement | Constraints |
-|-------|----------------|----------|-------------|
-| **General (将/帅)** | `W` | 1 step orthogonal | Palace only; Flying General rule |
-| **Advisor (士/仕)** | `F` | 1 step diagonal | Palace only |
-| **Elephant (象/相)** | `nA` | 2 steps diagonal | Cannot cross river; blocked at eye |
-| **Horse (马/傌)** | `n[WF]` | 1 ortho + 1 diag outward | Blocked at leg position |
-| **Chariot (车/俥)** | `R` | Sliding orthogonal | Cannot jump |
-| **Cannon (炮/砲)** | `pR` | Sliding orthogonal; hopper capture | Capture needs exactly 1 screen |
-| **Soldier (卒/兵)** | `fW` / `fWsW` | Forward 1; +sideways after river | Never backward |
-
-### Special Rule Details
-
-**Flying General (对将):**
-- If two Generals face each other on same file with no intervening pieces
-- Either General can capture the other
-- Position is illegal if active player leaves kings facing after move
-- Some rules treat this as immediate win for player who exposes the facing
-
-**Cannon Capture Algorithm:**
-```
-For each orthogonal direction:
-    screen_found = false
-    for each square along ray:
-        if not screen_found:
-            if square has piece:
-                screen_found = true  # Found the screen
-        else:
-            if square has enemy piece:
-                add to capture list
-            break  # Blocked after first piece past screen
-```
-
-**Horse Blocking (拐马脚):**
-- Horse moves 1 orthogonal then 1 diagonal outward
-- If the orthogonal "leg" square is occupied, horse cannot move in that direction
-- 8 potential destinations, each with unique leg position
-
-**Elephant Blocking (塞象眼):**
-- Elephant moves exactly 2 diagonal squares
-- The intermediate "eye" square must be empty
-- Cannot cross river (stays on own side)
-
----
-
-## Rule Engine Complexity Analysis
-
-### Implementation Difficulty by Component
-
-| Component | Lines of Code (est.) | Algorithm Complexity | Testing Complexity |
-|-----------|---------------------|---------------------|-------------------|
-| Board Representation | 50-100 | LOW | LOW |
-| Piece Movement | 200-300 | MEDIUM | MEDIUM |
-| Attack Detection | 150-200 | MEDIUM | HIGH |
-| Legal Move Filter | 50-100 | LOW | MEDIUM |
-| Check/Checkmate | 100-150 | MEDIUM | HIGH |
-| Stalemate | 30-50 | LOW | MEDIUM |
-| Flying General | 30-50 | LOW | MEDIUM |
-| Repetition (basic) | 100-150 | MEDIUM | HIGH |
-| 50-Move Rule | 20-30 | LOW | LOW |
-| Perpetual Check (WXF) | 200-300 | HIGH | VERY HIGH |
-| Perpetual Chase (WXF) | 300-500 | VERY HIGH | VERY HIGH |
-| Zobrist Hashing | 50-100 | MEDIUM | MEDIUM |
-
-### Critical Testing Scenarios
-
-1. **Pin Detection:** Piece pinned to king cannot move (would expose king)
-2. **Discovered Check:** Moving a piece reveals check on opponent king
-3. **Double Check:** King attacked by two pieces simultaneously
-4. **Cannon Screen Changes:** Moving piece affects cannon's capture ability
-5. **River Crossing:** Soldier gains sideways movement exactly on river crossing
-6. **Palace Corners:** Advisor and General corner cases
-7. **Flying General:** All scenarios of king facing detection
-
----
-
-## Draw Rules Summary
-
-| Rule | Trigger | Result | Complexity |
-|------|---------|--------|------------|
-| **Repetition Draw** | Same position occurs 4 times with same player to move | Draw | MEDIUM |
-| **Perpetual Check** | One player checks 4+ times consecutively | Loss for checking player | HIGH |
-| **Perpetual Chase** | One player chases same unprotected piece 4+ times | Loss for chasing player | HIGH |
-| **50-Move Rule** | 50 moves without pawn advance or capture | Draw | LOW |
-| **Insufficient Material** | Neither side can force checkmate | Draw | MEDIUM |
-| **Mutual Check/Chase** | Both players violate rules equally | Draw | HIGH |
-
-**Key Insight:** Xiangqi repetition rules are asymmetric — the same position repeating can result in win, loss, or draw depending on the *nature* of the moves being repeated.
+| UI Component | Engine Method | Notes |
+|-------------|--------------|-------|
+| `BoardWidget._render_board()` | `engine.board` property | Read-only; triggers scene rebuild |
+| `BoardWidget._on_square_clicked()` | `engine.legal_moves()`, `engine.is_legal()` | Filter to selected piece's moves |
+| `BoardWidget._on_destination_clicked()` | `engine.apply(move)` | Raises `ValueError` on illegal; UI shows feedback |
+| `GameController` | `engine.legal_moves()` inside agent | AI must call this to pick legal moves only |
+| `CapturedPanel` | `engine.apply()` return value | Captured piece int, 0 if none |
+| `StatusBar` | `engine.is_check()`, `engine.turn` | Re-evaluate after every apply |
+| `GameOverDialog` | `engine.result()` | Check after every apply |
+| `NewGameButton` | `engine.reset()` | Clears all UI state too |
 
 ---
 
 ## Sources
 
-- [Complete Implementation of WXF Chinese Chess Rules](https://arxiv.org/html/2412.17334v1) (arXiv:2412.17334, December 2024) — HIGH confidence
-- [The Rules of Xiangqi (Chinese Chess)](https://www.xqinenglish.com/index.php?option=com_content&view=article&id=923:the-rules-of-xiangqi-chinese-chess&catid=119&Itemid=569&lang=en) — HIGH confidence
-- [xiangqi.js GitHub Repository](https://github.com/lengyanyu258/xiangqi.js/) — MEDIUM confidence
-- [Orange-Xiangqi GitHub Repository](https://github.com/danieltan1517/orange-xiangqi) — MEDIUM confidence
-- [Xiangqi (Chinese Chess) — GNU XBoard Rules](https://www.gnu.org/software/xboard/whats_new/rules/Xiangqi.html) — HIGH confidence
-- [Xiangqi — PlayStrategy](https://playstrategy.org/variant/xiangqi) — MEDIUM confidence
-- [How to Play Chinese Chess (Xiangqi)](https://www.ymimports.com/pages/how-to-play-xiangqi-chinese-chess) — MEDIUM confidence
-- [Wikipedia — Xiangqi](https://en.wikipedia.org/wiki/Xiangqi) — MEDIUM confidence
+- [ChessQ — PyQt Xiangqi GUI](https://github.com/walker8088/ChessQ) — active PyQt Xiangqi project, last updated Feb 2025 — MEDIUM confidence
+- [xiangqi-setup — FEN to SVG rendering](https://github.com/hartwork/xiangqi-setup) — SVG rendering approach for xiangqi boards — MEDIUM confidence
+- [Xiangqi Unicode Characters — Compart](https://www.compart.com/en/unicode/U+1FA62) — Unicode U+1FA60–U+1FA6D range confirmed — HIGH confidence
+- [BabelStone Xiangqi Font](https://www.babelstone.co.uk/Fonts/Xiangqi.html) — free font covering full Unicode chess symbols block — HIGH confidence
+- [QGraphicsView Qt6 Documentation](https://doc.qt.io/qt-6/qgraphicsview.html) — official Qt docs — HIGH confidence
+- [PyQt6 QGraphicsView Tutorial — SteamXO](https://steam.oxxostudio.tw/category/python/pyqt6/qgraphicsview.html) — tutorial — MEDIUM confidence
+- [Chinese Chess Board Design — CSDN](https://blog.csdn.net/weixin_43401773/article/details/147174764) — board drawing patterns in Python — MEDIUM confidence
+- [Qt C++ Chinese Chess Implementation — CSDN](https://blog.csdn.net/u011463646/article/details/145601419) — QGraphicsView/Scene architecture for xiangqi — MEDIUM confidence
+- [python-chess SVG rendering](https://python-chess.readthedocs.io/en/latest/svg.html) — SVG rendering pattern reference for chess boards — HIGH confidence
 
 ---
 
-*Feature research for: RL-Xiangqi v0.1 Rule Engine*
-*Researched: 2026-03-19*
+*Feature research for: RL-Xiangqi v0.3 PyQt6 UI*
+*Researched: 2026-03-23*

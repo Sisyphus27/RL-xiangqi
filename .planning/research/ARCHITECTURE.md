@@ -1,349 +1,919 @@
-# Architecture Research
+# Architecture Research: UI / Engine / AI Integration
 
-**Domain:** Heterogeneous Multi-Agent RL — Xiangqi (Chinese Chess)
-**Researched:** 2026-03-19
-**Confidence:** MEDIUM (proposal+arbitration pattern is novel; CTDE and piece-level decomposition are verified patterns)
+**Project:** RL-Xiangqi — PyQt6 Desktop Board + Pluggable AI
+**Domain:** Desktop board game UI integration with pure-Python game engine and AI player component
+**Researched:** 2026-03-23
+**Confidence:** HIGH (all patterns are well-established Qt/software engineering practices; grounded in actual engine API)
 
-## Standard Architecture
+---
+
+## Recommended Architecture
 
 ### System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         UI Layer (PyQt6)                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
-│  │  BoardWidget  │  │ TrainingPanel│  │  GameControlWidget       │   │
-│  │ (QGraphicsView│  │ (loss/elo)   │  │  (new game, save, load)  │   │
-│  └──────┬───────┘  └──────┬───────┘  └────────────┬─────────────┘   │
-│         │                 │                        │                 │
-│         └─────────────────┴───────────┬────────────┘                 │
-│                                       │ signals/slots                │
-│                                       ▼                              │
-│                              GameController (QThread)                │
-└───────────────────────────────────────┬────────────────────────────-─┘
-                                        │ Python objects / queues
-┌───────────────────────────────────────▼──────────────────────────────┐
-│                         Game Engine Layer                             │
-│  ┌──────────────────────────────────────────────────────────────┐    │
-│  │                     XiangqiEnv                               │    │
-│  │  board state · legal move generation · rule enforcement      │    │
-│  │  reward shaping · terminal detection · history encoding      │    │
-│  └──────────────────────────────┬───────────────────────────────┘    │
-└──────────────────────────────────┼───────────────────────────────────┘
-                                   │ observations / actions
-┌──────────────────────────────────▼───────────────────────────────────┐
-│                      Agent Layer (CTDE)                               │
-│                                                                       │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐        │
-│  │  Jiang  │ │  Shi    │ │  Xiang  │ │  Ju     │ │  Ma     │        │
-│  │  Agent  │ │  Agent  │ │  Agent  │ │  Agent  │ │  Agent  │        │
-│  └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘        │
-│       │           │           │            │           │             │
-│  ┌────┴───────────┴───────────┴────────────┴───────────┴──────────┐  │
-│  │  (also Pao Agent, Zu Agent — 7 piece types total)              │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-│                              │ candidate proposals                    │
-│                              ▼                                        │
-│  ┌──────────────────────────────────────────────────────────────┐    │
-│  │                    Arbitration Network                        │    │
-│  │  receives candidate (piece_type, move, score) tuples         │    │
-│  │  outputs final action using global board state               │    │
-│  └──────────────────────────────┬───────────────────────────────┘    │
-└──────────────────────────────────┼───────────────────────────────────┘
-                                   │ selected action
-┌──────────────────────────────────▼───────────────────────────────────┐
-│                      Learning Layer                                   │
-│  ┌────────────────────────┐  ┌────────────────────────────────────┐  │
-│  │  Per-Agent Replay      │  │  Centralized Critic (value net)    │  │
-│  │  Buffers + Optimizers  │  │  shared global state input         │  │
-│  └────────────────────────┘  └────────────────────────────────────┘  │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  TrainingCoordinator                                           │  │
-│  │  per-step lightweight update + end-of-game deep update        │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
+Human player (drag-drop)                          AI player (background thread)
+        │                                                      │
+        ▼                                                      ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            UI Layer (PyQt6)                                   │
+│  ┌────────────────────┐  ┌───────────────────┐  ┌──────────────────────────┐  │
+│  │   BoardWidget      │  │  GameStatusBar    │  │  ControlPanel            │  │
+│  │  QGraphicsView     │  │  (turn, result)   │  │  (new, undo, redo)       │  │
+│  └─────────┬──────────┘  └───────────────────┘  └──────────────────────────┘  │
+│            │                                                                │
+│            │              QSignal-based Observer Pattern                     │
+│            │  (EngineObserver)          (EngineController)                   │
+│            │◄───────────────────────────────┬─────────────────────────────►│
+└────────────┼────────────────────────────────┼────────────────────────────────┘
+             │                                │
+             ▼                                ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                         Engine Layer                                        │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        XiangqiEngine                                 │    │
+│  │  apply(move)  legal_moves()  is_check()  result  undo()  redo()  │    │
+│  │  board (np.ndarray)  turn (int)  move_history (list)              │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+└────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                          AI Layer                                            │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                   AIPlayerBase  (abstract)                          │    │
+│  │   async suggest_move(engine_state) -> Move                          │    │
+│  └──────────────────────────┬──────────────────────────────────────────┘    │
+│                             │                                                │
+│         ┌───────────────────┼───────────────────────┐                       │
+│         ▼                   ▼                       ▼                       │
+│  ┌─────────────┐   ┌──────────────┐   ┌──────────────────────┐             │
+│  │ RandomAI    │   │ HeuristicAI  │   │ RLAgent (future)     │             │
+│  └─────────────┘   └──────────────┘   └──────────────────────┘             │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### Component Boundaries
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| BoardWidget | Render board, handle drag/drop, display legal move hints | PyQt6 QGraphicsView + QGraphicsScene |
-| TrainingPanel | Show loss curves, Elo/win-rate over time | pyqtgraph or matplotlib embedded in QWidget |
-| GameController | Bridge UI and engine; runs AI move computation off the main thread | QThread + pyqtSignal/pyqtSlot |
-| XiangqiEnv | Canonical game state; legal move generation; reward computation; step/reset API | Python class with numpy board array; python-chess-like move representation |
-| PieceAgent (x7) | Policy network for one piece type; given board obs + mask of legal moves for its pieces, outputs ranked candidate moves with scores | Small MLP or CNN head; one per piece type (Jiang, Shi, Xiang, Ju, Ma, Pao, Zu) |
-| Arbitration Network | Select the final move from all candidates; has access to full board state and all proposals | Attention or MLP over (board_state, candidates) |
-| Centralized Critic | Estimate V(s) for the joint state during training only; not used at inference | Shared network updated by all agents; classic CTDE critic |
-| ReplayBuffer | Store (state, action, reward, next_state, done) for each agent | Circular deque per agent, or shared with agent_id tag |
-| TrainingCoordinator | Schedule per-step and per-game training; write model checkpoints; log metrics | Python class orchestrating optimizer steps |
+| Component | Responsibility | Owns | Communicates With |
+|-----------|---------------|------|-------------------|
+| `BoardWidget` | Render board, capture drag-drop, emit `square_clicked(from, to)` | Qt graphics items | `GameController` via signals only |
+| `ControlPanel` | Buttons: new game, undo, redo, flip board, AI difficulty | Pushbuttons | `GameController` via signals only |
+| `GameStatusBar` | Display: "Red to move", "Black wins", etc. | QLabel | `GameController` via signal |
+| `GameController` | Orchestrate game state machine, own engine instance, route moves | `XiangqiEngine` instance, `AIPlayerBase` instance, `GameStateMachine` | UI via pyqtSignal; AI via async method call |
+| `XiangqiEngine` | Rule enforcement, move application, board state, terminal detection | Board state, undo stack, repetition state | GameController via direct method calls |
+| `AIPlayerBase` | Abstract interface: `suggest_move(engine) -> Move` | Nothing | GameController via method call + QThread |
+| `GameStateMachine` | Manage WAITING_INPUT / AI_THINKING / ANIMATING transitions | Current state enum | GameController |
 
-## Recommended Project Structure
+---
+
+## Layer Separation
+
+### The Three-Layer Contract
 
 ```
-rl_xiangqi/
-├── env/                     # Game engine — no ML dependencies
-│   ├── board.py             # Board state, move representation, legal move gen
-│   ├── rules.py             # Xiangqi-specific rules (check, checkmate, draw)
-│   ├── rewards.py           # Shaping reward definitions
-│   └── xiangqi_env.py       # OpenAI Gym-compatible Env wrapper
+Layer 1: UI (PyQt6)
+  - Owns ONLY Qt widgets
+  - NEVER calls XiangqiEngine directly
+  - NEVER creates AI instances
+  - Reacts ONLY to pyqtSignal emissions from GameController
+  - Sends user input ONLY as signals to GameController
+
+Layer 2: Engine (XiangqiEngine)
+  - Pure Python, zero UI dependencies
+  - No signals, no threading, no GUI awareness
+  - Driven entirely by GameController
+  - Fully unit-testable without any Qt or AI imports
+
+Layer 3: AI (AIPlayerBase + implementations)
+  - Driven by GameController
+  - Receives engine state via a clean snapshot (board copy + metadata dict)
+  - NEVER mutates engine state directly
+  - Returns a Move object to GameController, which applies it
+```
+
+**Why this contract matters for this project:** The engine already exists (`src/xiangqi/engine/engine.py`) with a clean API. Wrapping it in `GameController` is the only integration work needed. The engine's existing `apply(from_sq, to_sq)` signature maps directly to the `Move` abstraction needed by both UI and AI.
+
+### Clean Imports
+
+```
+src/xiangqi/            # Engine layer — zero dependencies outside this tree
+  engine/
+    engine.py           # XiangqiEngine
+
+src/ui/                 # UI layer
+  main.py               # QApplication entry point
+  board_widget.py       # QGraphicsView board
+  control_panel.py      # Buttons
+  status_bar.py         # Status display
+
+src/ai/                 # AI layer
+  base.py               # AIPlayerBase abstract class
+  random_ai.py          # Random legal move
+  heuristic_ai.py       # Material + positional scoring
+  rl_agent.py           # Future: PyTorch policy network
+
+src/controller/         # Bridge layer — the only place that imports all three
+  game_controller.py    # GameController, GameStateMachine
+  signals.py            # Shared pyqtSignal definitions
+```
+
+---
+
+## AI Abstraction Interface
+
+### `AIPlayerBase` Abstract Class
+
+The AI layer is pluggable. Any AI implementation — random, heuristic, RL, or external engine — must conform to this interface:
+
+```python
+# src/ai/base.py
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import List
+import numpy as np
+
+@dataclass(frozen=True)
+class Move:
+    """Immutable move representation shared by UI, engine, and AI."""
+    from_sq: int   # 0-89 flat square index
+    to_sq: int     # 0-89 flat square index
+
+    def encode(self) -> int:
+        """Encode to the 16-bit integer used by XiangqiEngine."""
+        return (self.from_sq & 0x1FF) | ((self.to_sq << 9) & 0xFE00)
+
+    @classmethod
+    def from_int(cls, encoded: int) -> "Move":
+        from_sq =  encoded        & 0x1FF
+        to_sq   = (encoded >> 9)  & 0x7F
+        return cls(from_sq=from_sq, to_sq=to_sq)
+
+
+@dataclass(frozen=True)
+class EngineSnapshot:
+    """Read-only snapshot of engine state for the AI.
+
+    GameController copies these fields from XiangqiEngine before passing
+    to the AI. The AI must NEVER mutate this snapshot or the engine.
+    """
+    board: np.ndarray          # shape (10, 9), dtype=int8, read-only view
+    turn: int                  # +1 = red to move, -1 = black to move
+    legal_moves: List[int]     # pre-computed legal move integers
+    is_in_check: bool          # side to move is in check
+    move_history: List[int]    # list of applied move integers
+    result: str                # 'IN_PROGRESS' | 'RED_WINS' | 'BLACK_WINS' | 'DRAW'
+    fen: str                   # WXF FEN string
+
+    @classmethod
+    def from_engine(cls, engine: XiangqiEngine) -> "EngineSnapshot":
+        """Capture current engine state as an immutable snapshot."""
+        return cls(
+            board=np.array(engine.board, copy=True),
+            turn=engine.turn,
+            legal_moves=engine.legal_moves(),
+            is_in_check=engine.is_check(),
+            move_history=list(engine.move_history),
+            result=engine.result(),
+            fen=engine.to_fen(),
+        )
+
+
+class AIPlayerBase(ABC):
+    """Abstract interface for all AI players.
+
+    Concrete implementations:
+      - RandomAI      (testing, baseline)
+      - HeuristicAI   (material + positional scoring, human-readable)
+      - RLAgent       (future: PyTorch policy network)
+
+    The suggest_move() method is synchronous. For real AI implementations
+    that take time to compute, GameController calls it in a QThread worker.
+    """
+
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """Human-readable name shown in UI, e.g. 'Random AI' or 'RL Agent'."""
+        ...
+
+    @abstractmethod
+    def suggest_move(self, snapshot: EngineSnapshot) -> Move | None:
+        """Select a move from the given engine snapshot.
+
+        Args:
+            snapshot: Read-only state snapshot. The AI must NOT mutate it.
+
+        Returns:
+            Move chosen by the AI, or None if no legal moves (game over).
+
+        Raises:
+            No valid move in snapshot.legal_moves is an internal error —
+            the AI should only be called when the game is ongoing.
+        """
+        ...
+
+    def legal_moves_from_snapshot(self, snapshot: EngineSnapshot) -> List[Move]:
+        """Utility: convert encoded ints to Move objects."""
+        return [Move.from_int(m) for m in snapshot.legal_moves]
+```
+
+### Why `EngineSnapshot` instead of passing `XiangqiEngine`?
+
+1. **AI must never hold a reference to the engine** — if an AI implementation accidentally calls `engine.apply()`, it corrupts game state outside GameController's management.
+2. **Thread safety** — the AI runs in a QThread. The engine lives in the main thread. Passing a snapshot (plain dataclass) is inherently thread-safe; passing a live engine object invites race conditions.
+3. **Reproducibility** — `EngineSnapshot.fen` and `move_history` are sufficient to reconstruct the exact position for logging, replay, or debugging.
+
+### `suggest_move` Implementation Example: RandomAI
+
+```python
+# src/ai/random_ai.py
+import random
+from .base import AIPlayerBase, EngineSnapshot, Move
+
+class RandomAI(AIPlayerBase):
+    @property
+    def name(self) -> str:
+        return "Random AI"
+
+    def suggest_move(self, snapshot: EngineSnapshot) -> Move | None:
+        if not snapshot.legal_moves:
+            return None
+        chosen = random.choice(snapshot.legal_moves)
+        return Move.from_int(chosen)
+```
+
+### `suggest_move` Implementation Example: HeuristicAI
+
+```python
+# src/ai/heuristic_ai.py
+import random
+from .base import AIPlayerBase, EngineSnapshot, Move
+
+# Piece values (centipawns, Xiangqi scale)
+_PIECE_VALUES = {0: 0, 1: 15000, 2: 200, 3: 200, 4: 400, 5: 900, 6: 450, 7: 100,
+                 -1: 15000, -2: 200, -3: 200, -4: 400, -5: 900, -6: 450, -7: 100}
+
+class HeuristicAI(AIPlayerBase):
+    """Material + capture scoring. Good enough to beat a random player."""
+
+    @property
+    def name(self) -> str:
+        return "Heuristic AI"
+
+    def suggest_move(self, snapshot: EngineSnapshot) -> Move | None:
+        if not snapshot.legal_moves:
+            return None
+
+        best_score = -1
+        best_moves = []
+
+        for encoded in snapshot.legal_moves:
+            score = self._score_move(encoded, snapshot)
+            if score > best_score:
+                best_score = score
+                best_moves = [encoded]
+            elif score == best_score:
+                best_moves.append(encoded)
+
+        return Move.from_int(random.choice(best_moves))
+
+    def _score_move(self, encoded: int, snapshot: EngineSnapshot) -> int:
+        """Score a move: captures > checks > center control > random."""
+        from_sq =  encoded        & 0x1FF
+        to_sq   = (encoded >> 9)  & 0x7F
+        fr, fc  = divmod(from_sq, 9)
+        tr, tc  = divmod(to_sq, 9)
+        captured = snapshot.board[tr, tc]
+
+        # Capture value: prefer taking high-value pieces
+        capture_score = _PIECE_VALUES[abs(captured)] * 1000 if captured != 0 else 0
+
+        # Check bonus: moves that deliver check
+        # (requires simulating the move — see Pitfall 1 below)
+        check_bonus = 50 if snapshot.is_in_check else 0
+
+        # Center/river control bonus
+        center_bonus = 10 if 3 <= tr <= 6 and 2 <= tc <= 6 else 0
+
+        return capture_score + check_bonus + center_bonus
+```
+
+---
+
+## Observer Pattern for UI Reacting to Engine State
+
+### Pattern: Qt Signal Observer (GameController = Subject)
+
+The classic GoF Observer pattern implemented with Qt's signal/slot mechanism. `GameController` is the single source of truth; all UI widgets are observers.
+
+**Rule:** UI widgets never poll engine state. They only update when GameController emits a signal.
+
+```python
+# src/controller/signals.py
+from PyQt6.QtCore import QObject, pyqtSignal
+
+class GameSignals(QObject):
+    """pyqtSignal definitions for the GameController → UI communication channel.
+
+    Defined as a standalone QObject so GameController can own one instance,
+    and widgets can connect to it without importing GameController directly.
+    """
+
+    board_changed = pyqtSignal()          # Board needs full redraw
+    move_applied = pyqtSignal(int, int)   # (from_sq, to_sq) for animation
+    turn_changed = pyqtSignal(int)        # +1 = red, -1 = black
+    check_changed = pyqtSignal(bool)      # is the side-to-move in check?
+    result_changed = pyqtSignal(str)      # 'IN_PROGRESS' | 'RED_WINS' | etc.
+    ai_thinking_started = pyqtSignal()    # AI started computing
+    ai_thinking_finished = pyqtSignal()    # AI finished (emit even on cancel)
+    move_hint_requested = pyqtSignal(int) # from_sq: highlight legal moves
+```
+
+### Signal Emission Contract
+
+**Every public method on GameController that mutates engine state emits signals immediately:**
+
+```python
+# Pseudocode for the contract
+def apply_user_move(self, from_sq: int, to_sq: int):
+    move = encode_move(from_sq, to_sq)
+    self._engine.apply(move)
+    self._state_machine.transition("MOVE_APPLIED")
+    self.signals.move_applied.emit(from_sq, to_sq)   # Trigger piece animation
+    self.signals.board_changed.emit()                 # Trigger square highlights
+    self.signals.turn_changed.emit(self._engine.turn)
+    self.signals.check_changed.emit(self._engine.is_check())
+    self.signals.result_changed.emit(self._engine.result())
+    self._check_game_over()
+
+def undo(self):
+    self._engine.undo()
+    self.signals.board_changed.emit()
+    self.signals.turn_changed.emit(self._engine.turn)
+    self.signals.result_changed.emit(self._engine.result())
+```
+
+### Why NOT use Qt's Model/View Architecture
+
+Qt's Model/View (QAbstractItemModel, QTableView) is designed for tabular data with selection semantics. For a board game, it adds complexity without benefit:
+- Piece positions are not rows/columns of a table
+- Drag-and-drop in QTableView requires extensive custom event handling
+- Custom widgets (QGraphicsView) are the correct tool for interactive board rendering
+
+BoardWidget should subclass `QGraphicsView`, not `QAbstractItemModel`.
+
+---
+
+## Qt Signal/Slot for Decoupled Component Communication
+
+### Connection Pattern
+
+Widgets connect to `GameSignals` in their `__init__` (or via a `setup_connections(controller_signals)` helper):
+
+```python
+# Inside BoardWidget.__init__
+def setup_connections(self, signals: GameSignals):
+    signals.board_changed.connect(self._on_board_changed)
+    signals.move_applied.connect(self._on_move_applied)
+    signals.turn_changed.connect(self._on_turn_changed)
+    signals.check_changed.connect(self._on_check_changed)
+    signals.move_hint_requested.connect(self._on_hint_requested)
+    signals.ai_thinking_started.connect(self._on_ai_thinking)
+    signals.ai_thinking_finished.connect(self._on_ai_finished)
+
+# Inside ControlPanel.__init__
+def setup_connections(self, signals: GameSignals):
+    signals.result_changed.connect(self._on_result_changed)
+    signals.ai_thinking_finished.connect(self._on_ai_finished)
+```
+
+### Control Signal (UI → Controller)
+
+User actions are emitted as signals from widgets and routed to GameController via a single slot:
+
+```python
+# src/controller/game_controller.py
+class GameController(QObject):
+    """Sole bridge between UI and engine/AI. Lives on the main Qt thread."""
+
+    # Control signals from UI
+    user_move_requested = pyqtSignal(int, int)  # (from_sq, to_sq)
+    undo_requested = pyqtSignal()
+    redo_requested = pyqtSignal()
+    new_game_requested = pyqtSignal()
+    ai_toggle_requested = pyqtSignal(bool)      # enable/disable AI opponent
+    ai_level_changed = pyqtSignal(str)          # 'random' | 'heuristic' | 'rl'
+
+    # External signal bus (owned)
+    signals: GameSignals
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.signals = GameSignals()
+        self._engine = XiangqiEngine.starting()
+        self._ai: AIPlayerBase | None = None
+        self._state_machine = GameStateMachine()
+
+        # Connect own control signals
+        self.user_move_requested.connect(self._on_user_move)
+        self.undo_requested.connect(self._on_undo)
+        self.redo_requested.connect(self._on_redo)
+        self.new_game_requested.connect(self._on_new_game)
+        self.ai_toggle_requested.connect(self._on_ai_toggle)
+        self.ai_level_changed.connect(self._on_ai_level_changed)
+```
+
+This pattern keeps UI code completely unaware of the engine and AI:
+- `BoardWidget` only knows it emits `user_move_requested(from_sq, to_sq)`
+- `BoardWidget` has no idea what happens next
+- `GameController` decides whether to apply the move, reject it as illegal, or forward it to the AI
+
+### Slot Decorator for Control Signal Handlers
+
+```python
+from PyQt6.QtCore import pyqtSlot
+
+class GameController(QObject):
+    @pyqtSlot(int, int)
+    def _on_user_move(self, from_sq: int, to_sq: int):
+        if self._state_machine.state != GameState.WAITING_INPUT:
+            return  # Ignore clicks while AI is thinking or animating
+        # Validate + apply + emit signals
+        ...
+
+    @pyqtSlot()
+    def _on_undo(self):
+        # Can be called anytime; guard in apply()
+        ...
+```
+
+---
+
+## Background AI Thread (QThread + Signals)
+
+### Anti-Pattern to Avoid
+
+Calling `ai.suggest_move(snapshot)` synchronously in an event handler blocks the Qt event loop. With a slow AI (RL inference: 50-500ms), the UI freezes.
+
+### Correct Pattern: Dedicated AI Worker QThread
+
+```
+Main Thread (Qt event loop)          AI Thread (QThread)
+─────────────────────────            ──────────────────────
+GameController                         AIWorker
+  │                                       │
+  │  request_ai_move(snapshot) ──────────►│
+  │                                       │  [run suggest_move()]
+  │                                       │  [may take 50-500ms]
+  │  ◄────────────── ai_move_ready(move) ─│
+  │                                       │
+  │  apply_move(move)                     │
+  │  emit signals ──────────────────────────► [idle]
+```
+
+### Implementation
+
+```python
+# src/controller/ai_worker.py
+from PyQt6.QtCore import QObject, QThread, pyqtSignal
+from .base import AIPlayerBase, EngineSnapshot, Move
+
+class AIWorker(QObject):
+    """QThread worker for running AI computation off the main thread.
+
+    Lifetime: created when AI turn starts, destroyed when move is ready.
+    Not reused across moves (avoids stale state issues).
+    """
+
+    move_ready = pyqtSignal(object)   # Move or None
+    error = pyqtSignal(str)           # Exception message
+
+    def __init__(self, ai: AIPlayerBase, snapshot: EngineSnapshot, parent=None):
+        super().__init__(parent)
+        self._ai = ai
+        self._snapshot = snapshot
+
+    def run(self):
+        """Executed in the AI QThread when started via moveToThread()."""
+        try:
+            move = self._ai.suggest_move(self._snapshot)
+            self.move_ready.emit(move)
+        except Exception as exc:
+            self.error.emit(str(exc))
+
+
+# src/controller/game_controller.py
+class GameController(QObject):
+    signals: GameSignals
+
+    def __init__(self, ...):
+        ...
+        self._ai_thread: QThread | None = None
+        self._ai_worker: AIWorker | None = None
+
+    def _start_ai_turn(self):
+        """Launch AI computation in a background thread."""
+        if self._state_machine.state != GameState.WAITING_INPUT:
+            return
+
+        if self._ai is None:
+            return  # No AI enabled
+
+        self._state_machine.transition("AI_START_THINKING")
+        self.signals.ai_thinking_started.emit()
+
+        # Build snapshot while still on main thread
+        snapshot = EngineSnapshot.from_engine(self._engine)
+
+        # Create worker + thread
+        self._ai_thread = QThread()
+        self._ai_worker = AIWorker(self._ai, snapshot)
+        self._ai_worker.moveToThread(self._ai_thread)
+
+        # Wire: thread starts → worker runs → move_ready signal
+        self._ai_thread.started.connect(self._ai_worker.run)
+        self._ai_worker.move_ready.connect(self._on_ai_move_ready)
+        self._ai_worker.error.connect(self._on_ai_error)
+
+        # Auto-cleanup when thread finishes
+        self._ai_thread.finished.connect(self._ai_worker.deleteLater)
+        self._ai_thread.finished.connect(self._ai_thread.deleteLater)
+
+        self._ai_thread.start()
+
+    @pyqtSlot(object)
+    def _on_ai_move_ready(self, move: Move | None):
+        """Called on main thread when AI has computed its move."""
+        if self._ai_thread is not None:
+            self._ai_thread.quit()
+            self._ai_thread.wait(5000)  # 5s timeout
+            self._ai_thread = None
+            self._ai_worker = None
+
+        self.signals.ai_thinking_finished.emit()
+
+        if move is None:
+            # Game over — no move returned
+            return
+
+        # Apply the AI move (same path as user move)
+        self._apply_move(move.from_sq, move.to_sq)
+
+    def _apply_move(self, from_sq: int, to_sq: int):
+        """Internal: apply a move and emit all relevant signals."""
+        encoded = encode_move(from_sq, to_sq)
+        try:
+            self._engine.apply(encoded)
+        except ValueError:
+            return  # Illegal — guard should have filtered this
+
+        self._state_machine.transition("MOVE_APPLIED")
+        self.signals.move_applied.emit(from_sq, to_sq)
+        self.signals.board_changed.emit()
+        self.signals.turn_changed.emit(self._engine.turn)
+        self.signals.check_changed.emit(self._engine.is_check())
+        self.signals.result_changed.emit(self._engine.result())
+        self._check_game_over()
+```
+
+### Why Create a New Thread Per Move
+
+Reusing a persistent QThread for AI computation introduces state-management complexity (the worker must reset its state between moves, and any exception in one move poisons the worker). For this project, creating a fresh thread per move is the correct tradeoff: the overhead of thread creation (~1ms) is negligible compared to AI computation time (50ms+), and the simplicity gain (each move = fresh state) is significant.
+
+If AI computation is very fast (RandomAI: <1ms), skip the thread entirely and call it synchronously:
+
+```python
+def _start_ai_turn(self):
+    if isinstance(self._ai, RandomAI):
+        move = self._ai.suggest_move(EngineSnapshot.from_engine(self._engine))
+        self._on_ai_move_ready(move)
+    else:
+        self._start_ai_background()
+```
+
+---
+
+## Game State Machine
+
+### States
+
+```
+                    ┌──────────────────────────┐
+                    │      WAITING_INPUT        │◄─────────────────┐
+                    │  (human to move or AI     │                  │
+                    │   to move if AI enabled)  │                  │
+                    └──────────────┬─────────────┘                  │
+                                   │ user clicks / AI move ready    │
+                    ┌──────────────▼─────────────┐                  │
+                    │       AI_THINKING          │                  │
+                    │  (AI computing in          │                  │
+                    │   QThread)                 │                  │
+                    └──────────────┬─────────────┘                  │
+                                   │ AI returns move                 │
+                    ┌──────────────▼─────────────┐                  │
+                    │        ANIMATING           │                  │
+                    │  (piece moving across      │                  │
+                    │   board — 200-500ms)       │                  │
+                    └──────────────┬─────────────┘                  │
+                                   │ animation done                 │
+                    ┌──────────────▼─────────────┐                  │
+                    │       GAME_OVER            │                  │
+                    │  (checkmate / draw /       │──────────────────┘
+                    │   resignation)             │  new game
+                    └─────────────────────────────┘
+```
+
+### State Definitions
+
+| State | Entry Condition | Valid Transitions | UI Behavior |
+|-------|----------------|-------------------|-------------|
+| `WAITING_INPUT` | Game start, after animation, after undo | `→ AI_THINKING` (if AI turn and enabled), `→ ANIMATING` (user clicks) | Board accepts clicks; cursor shows selectable pieces |
+| `AI_THINKING` | AI turn starts | `→ ANIMATING` (AI move returned) | "AI is thinking..." indicator; board non-interactive |
+| `ANIMATING` | Move applied, animation queued | `→ WAITING_INPUT` (animation done), `→ GAME_OVER` (move ends game) | Piece animates; no input accepted |
+| `GAME_OVER` | Terminal result detected | `→ WAITING_INPUT` (new game) | Result displayed; "New Game" highlighted |
+
+### Implementation
+
+```python
+# src/controller/state_machine.py
+from enum import Enum, auto
+
+class GameState(Enum):
+    WAITING_INPUT = auto()
+    AI_THINKING  = auto()
+    ANIMATING    = auto()
+    GAME_OVER    = auto()
+
+# Valid transitions: state -> set of valid next states
+_VALID_TRANSITIONS: dict[GameState, set[GameState]] = {
+    GameState.WAITING_INPUT: {GameState.AI_THINKING, GameState.ANIMATING, GameState.GAME_OVER},
+    GameState.AI_THINKING:  {GameState.ANIMATING,   GameState.GAME_OVER, GameState.WAITING_INPUT},
+    GameState.ANIMATING:    {GameState.WAITING_INPUT, GameState.GAME_OVER},
+    GameState.GAME_OVER:    {GameState.WAITING_INPUT},
+}
+
+class GameStateMachine:
+    def __init__(self):
+        self._state = GameState.WAITING_INPUT
+
+    @property
+    def state(self) -> GameState:
+        return self._state
+
+    def transition(self, event: str):
+        """Advance state machine based on an event string.
+
+        Raises:
+            ValueError: if the transition is not valid from the current state.
+        """
+        next_state = self._next_state(event)
+        if next_state not in _VALID_TRANSITIONS.get(self._state, set()):
+            raise ValueError(
+                f"Invalid transition: {self._state.name} + {event} -> "
+                f"{next_state.name} (valid: {self._valid_events(self._state)})"
+            )
+        self._state = next_state
+
+    def _next_state(self, event: str) -> GameState:
+        """Deterministic next state from current state + event."""
+        table = {
+            (GameState.WAITING_INPUT, "AI_START_THINKING"): GameState.AI_THINKING,
+            (GameState.WAITING_INPUT, "USER_MOVE"):         GameState.ANIMATING,
+            (GameState.AI_THINKING,   "MOVE_APPLIED"):       GameState.ANIMATING,
+            (GameState.AI_THINKING,   "GAME_OVER"):          GameState.GAME_OVER,
+            (GameState.ANIMATING,     "ANIMATION_DONE"):     GameState.WAITING_INPUT,
+            (GameState.ANIMATING,     "GAME_OVER"):          GameState.GAME_OVER,
+            (GameState.GAME_OVER,      "NEW_GAME"):           GameState.WAITING_INPUT,
+        }
+        return table.get((self._state, event), self._state)
+
+    def _valid_events(self, state: GameState) -> list[str]:
+        return [e for (s, e), n in table.items() if s == state]
+
+    def can_accept_input(self) -> bool:
+        """Convenience: is the board interactive in the current state?"""
+        return self._state == GameState.WAITING_INPUT
+```
+
+### Why a Dedicated State Machine
+
+Without it, guards against out-of-order actions are scattered across multiple methods as boolean flags:
+
+```python
+# Anti-pattern: scattered boolean flags
+def _on_square_clicked(self, sq):
+    if self._ai_thinking:  # scattered flag
+        return
+    if self._animating:    # another scattered flag
+        return
+    ...
+
+# Correct: single source of truth
+def _on_square_clicked(self, sq):
+    if not self._state_machine.can_accept_input():
+        return
+    ...
+```
+
+A `GameStateMachine` class consolidates all state-related guards into one place, making it impossible to enter an illegal UI state.
+
+---
+
+## Recommended Directory Structure
+
+```
+D:/WorkSpace/RL-xiangqi/
+├── src/
+│   └── xiangqi/
+│       ├── engine/              # v0.1 completed — no changes needed
+│       │   ├── engine.py        # XiangqiEngine (already exists)
+│       │   ├── state.py
+│       │   ├── legal.py
+│       │   ├── moves.py
+│       │   ├── rules.py
+│       │   ├── repetition.py
+│       │   ├── endgame.py
+│       │   ├── constants.py
+│       │   ├── types.py
+│       │   └── __init__.py
+│       │
+│       ├── ui/                  # NEW — PyQt6 presentation layer
+│       │   ├── __init__.py
+│       │   ├── main_window.py   # QMainWindow, layout assembly
+│       │   ├── board_widget.py  # QGraphicsView board rendering
+│       │   ├── piece_item.py    # QGraphicsPixmapItem for pieces
+│       │   ├── control_panel.py # New Game, Undo, Redo, AI toggle
+│       │   ├── status_bar.py    # Turn indicator, result display
+│       │   └── assets/          # PNG piece images (64x64 recommended)
+│       │       ├── red_king.png
+│       │       ├── red_advisor.png
+│       │       └── ...           # 14 piece images total
+│       │
+│       ├── ai/                   # NEW — Pluggable AI layer
+│       │   ├── __init__.py
+│       │   ├── base.py           # AIPlayerBase, EngineSnapshot, Move
+│       │   ├── random_ai.py      # RandomAI
+│       │   ├── heuristic_ai.py    # HeuristicAI
+│       │   └── rl_agent.py        # Future: RLAgent (PyTorch)
+│       │
+│       └── controller/           # NEW — Bridge layer (only layer that
+│           ├── __init__.py        # imports from engine + ai + ui)
+│           ├── signals.py         # GameSignals (pyqtSignal definitions)
+│           ├── state_machine.py   # GameStateMachine, GameState enum
+│           ├── game_controller.py # GameController (QObject, owns engine + AI)
+│           └── ai_worker.py        # AIWorker (QThread runner for slow AIs)
 │
-├── agents/                  # RL agents — depends on env, not on UI
-│   ├── base_agent.py        # Abstract PieceAgent interface
-│   ├── piece_agents.py      # Concrete agents (Ju, Ma, Pao, etc.)
-│   ├── arbitrator.py        # Arbitration network
-│   ├── critic.py            # Centralized value network
-│   └── multi_agent.py       # MultiAgentSystem: orchestrates proposal+select
+├── .planning/
+│   └── research/
+│       └── ARCHITECTURE.md        # This file
 │
-├── training/                # Training infrastructure
-│   ├── replay_buffer.py     # Circular buffer with optional PER
-│   ├── coordinator.py       # TrainingCoordinator (step update + game update)
-│   ├── checkpointer.py      # Save/load model weights
-│   └── metrics.py           # Win rate, Elo estimation, loss tracking
+├── tests/
+│   └── (existing test suite — no changes to engine tests)
 │
-├── ui/                      # PyQt6 front-end — depends on agents, env
-│   ├── main_window.py       # App entry point, layout
-│   ├── board_widget.py      # QGraphicsView chess board
-│   ├── game_controller.py   # QThread bridging UI ↔ engine
-│   ├── training_panel.py    # Training metrics visualization
-│   └── assets/              # Piece images, board graphics
-│
-├── config/
-│   └── default.yaml         # Hyperparameters, device, buffer sizes
-│
-└── main.py                  # Entry point
+├── pyproject.toml
+└── uv.lock
 ```
 
 ### Structure Rationale
 
-- **env/:** Zero ML dependencies. Can be unit-tested and profiled in isolation. Legal move generation and reward shaping are the hardest-to-debug components; isolation ensures correctness before adding RL.
-- **agents/:** Decoupled from UI. The multi_agent.py module is the only place that understands how proposals from all seven piece agents combine into one final action.
-- **training/:** Separated from inference path. The coordinator can be disabled or replaced (e.g., batch-only mode) without touching agents.
-- **ui/:** Pure presentation. GameController is the only bridge; UI never directly calls env or agents.
+| Directory | Why | Dependencies |
+|-----------|-----|-------------|
+| `src/xiangqi/engine/` | Already exists; pure rules engine | Zero external dependencies |
+| `src/xiangqi/ui/` | PyQt6 widgets only | PyQt6 only; no engine or AI imports |
+| `src/xiangqi/ai/` | AI implementations only | numpy only (for board analysis) |
+| `src/xiangqi/controller/` | Bridge: the only layer that imports engine + ai + ui | PyQt6, engine, ai |
 
-## Architectural Patterns
+The `controller/` package is intentionally thin (~300 lines total). It holds no game state of its own — only the `XiangqiEngine` instance and the `AIPlayerBase` reference.
 
-### Pattern 1: Centralized Training, Decentralized Execution (CTDE)
+---
 
-**What:** Each piece agent acts using only its own observations and legal-move mask at inference time. During training, a centralized critic sees the full board state and can assign credit across all agents.
+## Anti-Patterns to Avoid
 
-**When to use:** Always — this is the standard for cooperative heterogeneous MARL. HAPPO and MAPPO are the canonical algorithms.
+### Anti-Pattern 1: UI Calling Engine Directly
 
-**Trade-offs:** Training is more expensive (centralized critic sees joint state). Inference is fast (agents are independent). Credit assignment is much more stable than purely independent learners.
-
-**Example:**
 ```python
-# Decentralized inference
-for agent in piece_agents:
-    legal_mask = env.get_legal_mask(agent.piece_type)
-    proposal = agent.propose(board_obs, legal_mask)   # (move, score) tuple
+# BAD — UI imports and calls engine directly
+class BoardWidget(QGraphicsView):
+    def mouseReleaseEvent(self, event):
+        engine.apply(self._selected_move)  # WRONG
 
-# Centralized arbitration — selects among proposals using global state
-final_action = arbitrator.select(board_obs, proposals)
-env.step(final_action)
-
-# Centralized critic update (training only)
-value = critic(board_obs_full)  # sees full state
+# GOOD — UI emits signal, controller applies
+class BoardWidget(QGraphicsView):
+    def mouseReleaseEvent(self, event):
+        self.game_controller.user_move_requested.emit(from_sq, to_sq)
 ```
 
-### Pattern 2: Independent Proposal + Arbitration
+### Anti-Pattern 2: AI Mutating Engine State
 
-**What:** Each piece agent outputs a ranked list of its best candidate moves with confidence scores. The arbitrator is a separate network that takes (board_state, all_candidate_moves) and selects one final action.
-
-**When to use:** This pattern fits the project requirement exactly. It differs from standard CTDE in that the arbitrator is trained and acts as an explicit bottleneck — it can learn meta-strategies (e.g., prefer a Ju sacrifice if Pao has a winning follow-up).
-
-**Trade-offs:** Two-stage inference adds latency (~1ms). The arbitrator's loss must be carefully defined (it needs a signal about whether the chosen move was "right"). The simplest signal is the TD error of the game outcome. More complex: train arbitrator to maximize centralized value estimate.
-
-**Example:**
 ```python
-# Proposal stage
-proposals = []
-for agent in active_agents:      # only agents with pieces on board
-    top_k = agent.top_k_moves(board_obs, legal_mask, k=3)
-    proposals.extend(top_k)      # list of (piece_type, move, logit)
+# BAD — AI holds engine reference and applies move itself
+class BadAIAgent:
+    def __init__(self, engine):
+        self.engine = engine   # WRONG: AI now owns engine mutation
 
-# Arbitration stage
-final_action = arbitrator(board_obs_encoded, proposals)
-# arbitrator can be: attention over proposals, MLP, or simple argmax on joint value
+    def suggest_move(self):
+        move = self._compute()
+        self.engine.apply(move)  # Side effect! Controller doesn't know
+        return move
+
+# GOOD — AI returns Move; controller applies it
+class GoodAIAgent:
+    def suggest_move(self, snapshot):
+        move = self._compute(snapshot)
+        return move  # No side effects
 ```
 
-### Pattern 3: Separate Piece-Type Action Spaces
+### Anti-Pattern 3: QThread Subclassing
 
-**What:** Each piece type has a fundamentally different move structure (Ju slides along ranks/files; Ma hops in L-shape; Pao needs a screen). Rather than projecting all moves into a single flat action space, each agent owns its own action encoding.
-
-**When to use:** Always in heterogeneous piece-agent design. Forcing a single unified action space wastes capacity on impossible moves and makes the policy harder to learn.
-
-**Trade-offs:** 7 separate networks vs 1 network with 7 heads. Separate networks: cleaner, easier to inspect per-piece behavior, easy to add/remove piece types. Heads on one network: parameter sharing may help early training if the board encoding is shared. Recommendation: separate networks with a shared board encoder (CNN backbone shared; piece-specific MLP heads).
-
-**Example:**
 ```python
-# Shared board encoder (ResNet-style conv)
-board_features = shared_encoder(board_tensor)   # (B, D)
+# BAD — subclassing QThread is error-prone (override run(), start() semantics)
+class AThread(QThread):
+    def run(self):
+        self._ai.suggest_move(...)
 
-# Piece-specific policy heads
-ju_logits  = ju_head(board_features, ju_legal_mask)
-ma_logits  = ma_head(board_features, ma_legal_mask)
-# ...
+# GOOD — worker QObject moved to a QThread
+class AIWorker(QObject):
+    def run(self):
+        self._ai.suggest_move(...)
+
+worker = AIWorker(ai, snapshot)
+thread = QThread()
+worker.moveToThread(thread)
+thread.started.connect(worker.run)
 ```
 
-## Data Flow
+PyQt documentation explicitly warns against subclassing `QThread`. Use `QObject.moveToThread()` instead.
 
-### Turn Flow (AI side)
+### Anti-Pattern 4: Missing Signal Cleanup on Controller Reset
 
-```
-Human plays move
-    ↓
-XiangqiEnv.step(human_action)
-    → board state updated, reward=0 for AI
-    ↓
-GameController (QThread)
-    → calls MultiAgentSystem.select_action(board_obs)
-         ↓
-         for each PieceAgent:
-             legal_mask = env.get_legal_mask(piece_type)
-             proposals = agent.propose(obs, legal_mask)   # forward pass
-         ↓
-         Arbitrator.select(board_obs, all_proposals)      # forward pass
-         → final_action returned
-    ↓
-XiangqiEnv.step(final_action)
-    → board state updated
-    → reward computed (shaping + terminal check)
-    ↓
-GameController emits signal → BoardWidget.update()
+```python
+# BAD — signals not disconnected when AI is swapped
+def set_ai(self, ai: AIPlayerBase):
+    self._ai = ai   # Old worker thread still running, memory leak
+
+# GOOD — terminate + wait old thread before setting new AI
+def set_ai(self, ai: AIPlayerBase):
+    if self._ai_thread is not None:
+        self._ai_thread.quit()
+        self._ai_thread.wait(5000)
+    self._ai = ai
 ```
 
-### Training Flow (per-step)
+---
 
+## Scalability Considerations
+
+| Concern | At Human vs AI (v1) | At AI vs AI Self-Play | At RL Training Loop |
+|---------|---------------------|----------------------|---------------------|
+| AI thread | 1 QThread per move, destroy after use | Same | All AI calls are synchronous (no thread needed) |
+| Engine instance | 1 shared instance in GameController | 1 per game | 1 per environment step (CPU workers) |
+| UI updates | Every move, every signal emission | Same | Not applicable (no UI) |
+| Memory | ~10MB for UI + engine | ~10MB per game instance | ~1MB per env instance, 100s of envs |
+| Bottleneck | AI computation (>100ms = noticeable lag) | AI computation | Env stepping throughput |
+
+For v1 human-vs-AI, the AI QThread pattern is sufficient. For future AI-vs-AI self-play, batch AI computation across a `QThreadPool` of workers with a shared engine queue.
+
+---
+
+## Phase-Specific Architecture Notes
+
+### Phase: PyQt6 Board UI + GameController
+
+The core wiring challenge is ensuring all UI state originates from `GameSignals` emissions. The first working version should:
+1. `GameController` owns `XiangqiEngine.starting()`
+2. `BoardWidget` displays `engine.board` via `board_changed` signal
+3. User clicks a piece → `user_move_requested(from_sq, to_sq)` signal
+4. `GameController` validates and applies; emits `move_applied` for animation
+5. After animation, `state_machine.transition("ANIMATION_DONE")` → `WAITING_INPUT`
+
+### Phase: AI Integration
+
+The pluggable AI interface is designed to be trivial to test:
+
+```python
+def test_heuristic_ai_always_captures_when_possible():
+    snapshot = make_snapshot_with_capturable_enemy_piece()
+    ai = HeuristicAI()
+    move = ai.suggest_move(snapshot)
+    assert snapshot.board[move.to_sq] != 0  # Captured something
 ```
-(state, action, reward, next_state, done)
-    ↓
-ReplayBuffer.push(transition)
-    ↓ (if buffer has enough samples)
-TrainingCoordinator.step_update()
-    → sample mini-batch
-    → compute TD targets using Centralized Critic
-    → update per-agent policy networks (actor loss)
-    → update Arbitrator (selection quality loss)
-    → update Centralized Critic (value loss)
-    → log metrics
-```
 
-### End-of-Game Deep Update
+Every AI implementation is unit-testable with no Qt dependency — pure Python with `EngineSnapshot`.
 
-```
-Episode ends (win/loss/draw)
-    ↓
-XiangqiEnv returns terminal reward (+1 / -1 / 0)
-    ↓
-TrainingCoordinator.game_update()
-    → compute Monte-Carlo returns over full game trajectory
-    → perform multiple update passes (larger batch, more epochs)
-    → update Elo estimate
-    → checkpoint models
-    ↓
-MetricsLogger → TrainingPanel emits updated plots
-```
-
-### Key Data Flows
-
-1. **Board observation encoding:** Board state is a 3D tensor (channels × 10 × 9) with one channel per piece type per color + auxiliary channels (turn, repetition count). All agents share this encoding as input.
-2. **Legal move mask:** The Env provides per-piece-type boolean masks over possible moves. Agents apply softmax only over legal moves, preventing illegal action selection before arbitration.
-3. **Reward shaping signal:** XiangqiEnv computes a composite reward: terminal outcome (dominant) + capture delta (piece values) + position control (optional). All agents share the same scalar reward per step.
-4. **Model persistence:** After each game, TrainingCoordinator writes versioned `.pt` files for all 7 piece agents + arbitrator + critic. Best model (by Elo) is separately tracked.
-
-## Scaling Considerations
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| Single machine (M1 Max 32GB) | All components in one process; QThread for UI separation; MPS for neural forward/backward passes; CPU workers for env stepping |
-| If training speed becomes bottleneck | Decouple data collection (CPU, env-heavy) from gradient updates (MPS, net-heavy) using a queue; async actor-learner pattern |
-| If model grows large | Share CNN board encoder weights across all piece agents; only piece-specific heads are independent |
-
-### Scaling Priorities
-
-1. **First bottleneck:** Neural network forward passes during AI turn selection. Fix: batch all 7 piece-agent forward passes together; use shared encoder to reduce repeated computation.
-2. **Second bottleneck:** UI freezing during training epochs. Fix: all training happens in QThread; never block the Qt main thread.
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Monolithic Policy Network
-
-**What people do:** Use a single policy network that takes board state and outputs one move over all possible moves (e.g., 10×9×possible_destinations flat space).
-
-**Why it's wrong:** For heterogeneous piece agents, this ignores the per-piece structural prior. The network must learn to zero out impossible moves for each piece type independently — wasted capacity. More critically, it destroys the independent-proposal architecture entirely: there is no meaningful arbitration step if there is only one policy.
-
-**Do this instead:** Separate policy head per piece type, each operating over its own legal move set. A shared CNN board encoder feeds all heads.
-
-### Anti-Pattern 2: Blocking UI Thread for AI Computation
-
-**What people do:** Call `agent.select_action()` directly in a Qt event handler (button click, drag release).
-
-**Why it's wrong:** Neural forward passes on even a small network take 10–100ms. On MPS, the first call includes kernel compilation overhead (seconds). The UI freezes and Qt event queue backs up.
-
-**Do this instead:** Use `QThread` (or `QRunnable` + `QThreadPool`) for all AI computation. Communicate results back to the main thread via `pyqtSignal`.
-
-### Anti-Pattern 3: Training on Every Single Step Synchronously
-
-**What people do:** After each env step, immediately run a gradient update before the UI updates.
-
-**Why it's wrong:** Gradient updates are 10–100x slower than env steps. The UI will feel sluggish. The training signal per step is also very noisy — minibatch updates from a replay buffer are far more stable.
-
-**Do this instead:** Push transitions to a replay buffer every step. Run lightweight gradient updates asynchronously on a fixed schedule (e.g., every N steps). Run a deeper multi-epoch update at game end.
-
-### Anti-Pattern 4: Shared Replay Buffer Confusion Without Agent Tags
-
-**What people do:** Store all transitions in one replay buffer without tagging which piece agent took the action.
-
-**Why it's wrong:** Each piece agent must only receive gradient updates from transitions where *it* proposed the action. Untagged buffers cause all agents to train on all transitions, corrupting per-piece specialization.
-
-**Do this instead:** Tag each transition with `agent_id` and `piece_type`. During training, sample per-agent sub-batches, or maintain separate per-agent buffers.
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| PyTorch MPS | `.to('mps')` device placement; `PYTORCH_ENABLE_MPS_FALLBACK=1` env var | Only one MPS device; no distributed training. Unified memory means no explicit CPU↔GPU copies. |
-| pyqtgraph / matplotlib | Embedded in QWidget for training visualization | pyqtgraph is faster for live updating; matplotlib is more familiar. Recommend pyqtgraph for real-time loss curves. |
-| Model checkpoints (filesystem) | `torch.save` / `torch.load`; versioned filenames | Save after each game. Keep last N + best-ever checkpoint. |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| UI ↔ GameController | `pyqtSignal` / `pyqtSlot` (Qt signal/slot across threads) | Only way to safely update UI from QThread |
-| GameController ↔ XiangqiEnv | Direct Python method calls (same thread as GameController) | Env is pure Python, safe to call synchronously |
-| MultiAgentSystem ↔ PieceAgents | Direct method calls (same process/thread) | Piece agents are stateless at inference; thread safety only matters during training |
-| TrainingCoordinator ↔ ReplayBuffer | Direct Python (same thread) | If async training is added later, protect with a threading.Lock |
-| XiangqiEnv ↔ ReplayBuffer | TrainingCoordinator collects transitions from Env and pushes to buffer | Env does not know about the buffer; coordinator decouples them |
-
-## Build Order Implications
-
-The component dependency graph implies this build order:
-
-1. **XiangqiEnv** — foundational; no RL dependencies. Build and test game rules fully before writing any agent code.
-2. **Board observation encoding + legal move masks** — part of env; needed by all agents. Define the tensor format early; changing it later breaks all agent input shapes.
-3. **PieceAgent shells** (random policy) — stub agents that can propose legal random moves. Enables end-to-end wiring before any real learning.
-4. **Arbitration + MultiAgentSystem** — once agents can propose moves, the arbitration loop can be wired and tested for correctness.
-5. **PyQt6 UI + GameController** — wire human play against random-policy agents. Validates the full game loop before training is integrated.
-6. **ReplayBuffer + TrainingCoordinator + Centralized Critic** — learning infrastructure. After this, agents start actually learning.
-7. **Shaping rewards** — tune after basic learning works. Getting sign and scale right requires seeing initial training curves.
-8. **MPS optimization + checkpointing + training visualization** — final hardening once learning is confirmed functional.
+---
 
 ## Sources
 
-- CTDE paradigm: HAPPO/HATRPO (Kuba et al.), MAPPO — confirmed patterns for heterogeneous cooperative MARL [MEDIUM confidence — papers confirmed via web search, not Context7]
-- Proposal + Arbitration pattern: inspired by CTDE centralized critic pattern; no exact published "proposal+arbitration for chess pieces" system found — this is a novel combination [LOW confidence — design extrapolated from CTDE + MoE literature]
-- AlphaZero architecture (shared encoder, policy head + value head): IEEE CoG 2019 paper, PNAS AlphaZero paper [HIGH confidence — well-documented]
-- M2CTS (MoE + MCTS for chess): https://www.researchgate.net/publication/400492537 [MEDIUM confidence — webSearch only]
-- PyTorch MPS architecture: official PyTorch docs + webSearch [HIGH confidence] — single MPS device, no distributed, CPU workers for async collection
-- PyQt6 threading pattern: established Qt pattern (QThread + signals) [HIGH confidence — standard practice]
-- Xiangqi RL: DRL+MCTS Xiangqi (arXiv 2506.15880), Mastering Xiangqi Without Search (arXiv 2410.04865) [MEDIUM confidence — papers surfaced via webSearch]
-- ANNSIM 2024 Markov Games with Chess (per-piece agent structure): https://annsim.org/wp-content/uploads/2024/08/ANNSIM2024_86_Paper.pdf [LOW confidence — could not fetch full paper]
-- Per-piece action space design: logical derivation from Xiangqi rules; each piece type has structurally distinct move generation [HIGH confidence — game rules are fixed]
+- Qt documentation: QThread + signals/slot pattern — HIGH confidence (official Qt docs)
+- PyQt6 signal/slot threading: riverbankcomputing.com/pyqt/signalsandslots — HIGH confidence
+- QThread subclassing warning: doc.qt.io/qt-6/qthread.html#subclassing-qthread — HIGH confidence (explicit warning in Qt docs)
+- Observer pattern in Qt: standard software engineering practice — HIGH confidence
+- Game state machine for board games: standard pattern used in chess.com, lichess, Stockfish UI — HIGH confidence
+- AI abstraction interface design: python-chess library API design (abstraction over engine), stockfish Python bindings — HIGH confidence
+- EngineSnapshot pattern: derived from the GoF Memento pattern for encapsulating internal state — HIGH confidence (standard design pattern)
+- Move encoding: confirmed from existing `src/xiangqi/engine/engine.py` and `types.py` — HIGH confidence
 
 ---
-*Architecture research for: RL-Xiangqi heterogeneous multi-agent chess system*
-*Researched: 2026-03-19*
+*Architecture research for: RL-Xiangqi PyQt6 + AI integration layer*
+*Researched: 2026-03-23*
