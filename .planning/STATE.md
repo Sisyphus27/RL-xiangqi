@@ -1,15 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2
-milestone_name: PyQt6 UI
-status: roadmap_created
-stopped_at: Roadmap created, awaiting Phase 05 plan
-last_updated: "2026-03-23"
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-23T15:23:19.173Z"
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 2
   percent: 0
 ---
 
@@ -20,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 05 — Board Rendering
+**Current focus:** Phase 05 — board-rendering
 
 ## Runtime Environment
 
@@ -31,9 +30,8 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 05 (Board Rendering)
-Plan: Not started
-Status: Roadmap created, ready for planning
+Phase: 05 (board-rendering) — EXECUTING
+Plan: 3 of 3
 
 ## Phase Structure
 

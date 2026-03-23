@@ -7,8 +7,8 @@
 
 ### UI-01: Board Rendering
 
-- [ ] **UI-01**: PyQt6 `QGraphicsView` + `QGraphicsScene` 渲染 9×10 象棋盘（网格 + 河 + 九宫斜线）
-- [ ] **UI-02**: 棋子使用引擎 Piece 枚举的中文字符渲染（`QGraphicsSimpleTextItem`），红黑区分颜色
+- [x] **UI-01**: PyQt6 `QGraphicsView` + `QGraphicsScene` 渲染 9×10 象棋盘（网格 + 河 + 九宫斜线）
+- [x] **UI-02**: 棋子使用引擎 Piece 枚举的中文字符渲染（`QGraphicsSimpleTextItem`），红黑区分颜色
 
 ### UI-02: Interaction
 
@@ -66,8 +66,8 @@ Deferred to future milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | Phase 05 | Pending |
-| UI-02 | Phase 05 | Pending |
+| UI-01 | Phase 05 | Complete |
+| UI-02 | Phase 05 | Complete |
 | UI-03 | Phase 06 | Pending |
 | UI-04 | Phase 06 | Pending |
 | UI-05 | Phase 06 | Pending |

@@ -34,8 +34,8 @@
 5. 窗口标题显示 "RL-Xiangqi v0.2"
 
 **Plans:** 3 plans
-- [ ] 05-01-PLAN.md — UI constants (constants.py, __init__.py)
-- [ ] 05-02-PLAN.md — PieceItem rendering (board_items.py)
+- [x] 05-01-PLAN.md — UI constants (constants.py, __init__.py)
+- [x] 05-02-PLAN.md — PieceItem rendering (board_items.py)
 - [ ] 05-03-PLAN.md — QXiangqiBoard + MainWindow + tests
 
 ---
