@@ -8,7 +8,7 @@
 
 ## Phases
 
-- [ ] **Phase 05: Board Rendering** — QGraphicsView + QGraphicsScene 渲染 9x10 棋盘与 32 枚棋子
+- [x] **Phase 05: Board Rendering** — QGraphicsView + QGraphicsScene 渲染 9x10 棋盘与 32 枚棋子 ✓ COMPLETE
 - [ ] **Phase 06: Piece Interaction** — 点击选子、合法走法高亮、点击落子
 - [ ] **Phase 07: AI Interface + Game State** — AIPlayer ABC / EngineSnapshot / RandomAI + 回合提示 + 终局弹窗
 - [ ] **Phase 08: Game Control** — 新对局按钮 + 连续悔棋
@@ -36,7 +36,7 @@
 **Plans:** 3 plans
 - [x] 05-01-PLAN.md — UI constants (constants.py, __init__.py)
 - [x] 05-02-PLAN.md — PieceItem rendering (board_items.py)
-- [ ] 05-03-PLAN.md — QXiangqiBoard + MainWindow + tests
+- [x] 05-03-PLAN.md — QXiangqiBoard + MainWindow + tests ✓ COMPLETE
 
 ---
 
@@ -116,7 +116,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 05. Board Rendering | 2/3 | In progress | 05-01, 05-02 |
+| 05. Board Rendering | 3/3 | ✓ Complete | 05-01, 05-02, 05-03 |
 | 06. Piece Interaction | 0/? | Not started | - |
 | 07. AI Interface + Game State | 0/? | Not started | - |
 | 08. Game Control | 0/? | Not started | - |

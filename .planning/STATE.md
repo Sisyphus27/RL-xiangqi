@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
-status: unknown
+status: milestone_phase05_complete
 last_updated: "2026-03-23T15:23:19.173Z"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 67
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -30,19 +30,21 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 05 (board-rendering) — EXECUTING
-Plan: 3 of 3 (completed: 05-01, 05-02; next: 05-03)
+Phase: 05 (board-rendering) — COMPLETE
+Plan: 3 of 3 (completed: 05-01, 05-02, 05-03; milestone complete)
 
 ## Phase Structure
 
 | # | Phase | Requirements | Status |
 |---|-------|-------------|--------|
-| 05 | Board Rendering | UI-01, UI-02 | Not started |
+| 05 | Board Rendering | UI-01, UI-02 | ✓ Complete |
 | 06 | Piece Interaction | UI-03, UI-04, UI-05 | Not started |
 | 07 | AI Interface + Game State | AI-01, AI-02, AI-03, AI-04, UI-06, UI-07 | Not started |
 | 08 | Game Control | UI-08, UI-09 | Not started |
 
-Progress: [███████░░░] 67%
+Progress: [██████████] 100%
+
+Phase 05 (Board Rendering) — COMPLETE ✓
 
 ## Accumulated Context
 
@@ -58,10 +60,10 @@ Recent decisions affecting current work:
 - [v0.2 Init]: EngineSnapshot for thread safety — engine reference never crosses thread boundary
 - [v0.2 Init]: Generation counter for stale AI result discarding
 - [v0.2 Init]: is_legal() guard on every AI-returned move before apply()
+- [05-03 Complete]: Phase 05 Board Rendering done — QXiangqiBoard + MainWindow + full test suite ✓
 
 ### Pending Todos
 
-- Phase 05: Board rendering with QGraphicsView + QGraphicsScene
 - Phase 06: Piece interaction (select/highlight/move)
 - Phase 07: AIPlayer ABC + EngineSnapshot + RandomAI + turn/game-over UI
 - Phase 08: New game button + undo (with continuous support)
