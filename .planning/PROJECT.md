@@ -20,16 +20,17 @@
 
 ### Active
 
-- [ ] 中国象棋完整规则实现（含将军检测、胜负判定）
-- [ ] 异构多智能体架构：每种棋子类型作为独立智能体
-- [ ] 独立提议+仲裁的协作决策机制
-- [ ] PyQt6桌面UI：棋盘显示、棋子拖拽、走法合法性校验
-- [ ] 在线学习：人机对弈时实时训练
-- [ ] 混合更新策略：每步轻量更新 + 终局深度优化
-- [ ] Shaping奖励设计（吃子、控盘等中间奖励）
-- [ ] MPS后端支持（Apple Silicon优化）
-- [ ] 模型自动保存（每局结束后）
-- [ ] 训练可视化（loss曲线、棋力指标）
+- [x] Phase 1-4: 象棋引擎（纯规则，无UI/RL） — v0.1 ✓
+- [ ] 棋盘渲染（QGraphicsView，9×10 + 河/宫） — v0.2
+- [ ] 棋子交互（选子/高亮/落子） — v0.2
+- [ ] AIPlayer 接口 + RandomAI — v0.2
+- [ ] 游戏控制（新对局/悔棋） — v0.2
+- [ ] Gymnasium RL Environment — v0.3
+- [ ] PyQt6 桌面 UI — v0.2/v0.3
+- [ ] 异构多智能体架构 — v1.0
+- [ ] Alpha-Beta / MCTS AI — v1.0
+- [ ] 在线学习（实时训练） — v1.0
+- [ ] MPS 后端支持（Apple Silicon） — v1.0
 
 ### Out of Scope
 
@@ -50,19 +51,23 @@
 - **Git Range**: 2026-03-19 → 2026-03-21 (2 days, ~20 commits)
 - **Phase Count**: 7 phases, 11 plans completed
 
-## Current Milestone: v0.2 RL Environment Interface
+## Current Milestone: v0.2 PyQt6 UI
 
-**Goal:** Gymnasium `Env` interface wrapping the v0.1 engine — `reset()`, `step()`, `observation_space`, `action_space`, AlphaZero-style board planes.
+**Goal:** 人机对弈界面（PyQt6）+ RandomAI + AI 抽象接口
 
-**Status:** Not started — awaiting v0.1 archival
+**Target features:**
+- 棋盘渲染（QGraphicsView + QGraphicsScene，9×10 + 河/宫）
+- 棋子交互（点击选子 + 合法走法高亮 + 落子）
+- AI 接口（AIPlayer ABC + EngineSnapshot + RandomAI）
+- 游戏控制（新对局 + 悔棋）
 
 ## Milestones
 
 | Version | Status | Description |
 |---------|--------|-------------|
 | v0.1 | ✓ Complete | 象棋引擎（纯规则，无UI/RL） |
-| v0.2 | — | RL 环境接口 |
-| v0.3 | — | PyQt6 UI |
+| v0.2 | — In Progress | PyQt6 UI + RandomAI + AI 接口 |
+| v0.3 | — | Gymnasium RL Environment |
 | v1.0 | — | AI 对弈（Alpha-Beta / MCTS） |
 
 ## Key Decisions
@@ -83,4 +88,4 @@
 | Stalemate=负（中国规则） | 困毙=无合法走法，无论是否被将军均判负 | ✓ v0.1 |
 
 ---
-*Last updated: 2026-03-21 after v0.1 milestone completion*
+*Last updated: 2026-03-23 after v0.2 milestone initialization*
