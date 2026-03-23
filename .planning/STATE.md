@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: PyQt6 UI
-status: defining_requirements
-stopped_at: Requirements defined, awaiting roadmap creation
-last_updated: "2026-03-23T11:10:00.000Z"
+status: roadmap_created
+stopped_at: Roadmap created, awaiting Phase 05 plan
+last_updated: "2026-03-23"
 progress:
   total_phases: 4
   completed_phases: 0
@@ -20,7 +20,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 1 — Board Rendering
+**Current focus:** Phase 05 — Board Rendering
 
 ## Runtime Environment
 
@@ -31,18 +31,18 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: Not started (requirements defined)
-Plan: —
-Status: Defining requirements
+Phase: 05 (Board Rendering)
+Plan: Not started
+Status: Roadmap created, ready for planning
 
 ## Phase Structure
 
 | # | Phase | Requirements | Status |
 |---|-------|-------------|--------|
-| 1 | 棋盘渲染 | UI-01, UI-02 | Not started |
-| 2 | 棋子交互 | UI-03, UI-04, UI-05 | Not started |
-| 3 | AI 接口 | AI-01, AI-02, AI-03, AI-04, UI-06, UI-07 | Not started |
-| 4 | 游戏控制 | UI-08, UI-09 | Not started |
+| 05 | Board Rendering | UI-01, UI-02 | Not started |
+| 06 | Piece Interaction | UI-03, UI-04, UI-05 | Not started |
+| 07 | AI Interface + Game State | AI-01, AI-02, AI-03, AI-04, UI-06, UI-07 | Not started |
+| 08 | Game Control | UI-08, UI-09 | Not started |
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,14 +58,16 @@ Recent decisions affecting current work:
 - [v0.2 Init]: RandomAI — black plays random legal move
 - [v0.2 Init]: QThread worker (moveToThread) — AI off main thread, "AI 思考中" indicator
 - [v0.2 Init]: EngineSnapshot for thread safety — engine reference never crosses thread boundary
+- [v0.2 Init]: Generation counter for stale AI result discarding
+- [v0.2 Init]: is_legal() guard on every AI-returned move before apply()
 
 ### Pending Todos
 
-- Phase 1: Board rendering with QGraphicsView
-- Phase 2: Piece interaction (select/highlight/move)
-- Phase 3: AI abstraction + RandomAI
-- Phase 4: Game control (new game/undo) + E2E validation
+- Phase 05: Board rendering with QGraphicsView + QGraphicsScene
+- Phase 06: Piece interaction (select/highlight/move)
+- Phase 07: AIPlayer ABC + EngineSnapshot + RandomAI + turn/game-over UI
+- Phase 08: New game button + undo (with continuous support)
 
 ### Blockers/Concerns
 
-None — requirements defined, roadmap pending.
+None — roadmap created.

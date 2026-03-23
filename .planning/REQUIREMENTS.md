@@ -66,19 +66,19 @@ Deferred to future milestones.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | Phase 1 | Pending |
-| UI-02 | Phase 1 | Pending |
-| UI-03 | Phase 2 | Pending |
-| UI-04 | Phase 2 | Pending |
-| UI-05 | Phase 2 | Pending |
-| UI-06 | Phase 3 | Pending |
-| UI-07 | Phase 3 | Pending |
-| AI-01 | Phase 3 | Pending |
-| AI-02 | Phase 3 | Pending |
-| AI-03 | Phase 3 | Pending |
-| AI-04 | Phase 3 | Pending |
-| UI-08 | Phase 4 | Pending |
-| UI-09 | Phase 4 | Pending |
+| UI-01 | Phase 05 | Pending |
+| UI-02 | Phase 05 | Pending |
+| UI-03 | Phase 06 | Pending |
+| UI-04 | Phase 06 | Pending |
+| UI-05 | Phase 06 | Pending |
+| UI-06 | Phase 07 | Pending |
+| UI-07 | Phase 07 | Pending |
+| AI-01 | Phase 07 | Pending |
+| AI-02 | Phase 07 | Pending |
+| AI-03 | Phase 07 | Pending |
+| AI-04 | Phase 07 | Pending |
+| UI-08 | Phase 08 | Pending |
+| UI-09 | Phase 08 | Pending |
 
 **Coverage:**
 - v1 requirements: 13 total
@@ -87,4 +87,4 @@ Deferred to future milestones.
 
 ---
 *Requirements defined: 2026-03-23*
-*Last updated: 2026-03-23 after v0.2 requirements gathering*
+*Last updated: 2026-03-23 after v0.2 roadmap creation (phase numbering aligned to v0.2 roadmap: 05-08)*
