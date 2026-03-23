@@ -13,7 +13,8 @@
       "Bash(conda run:*)",
       "Bash(source ~/.zshrc)",
       "Bash(conda activate:*)",
-      "Bash(pytest tests/test_pyffish.py -v)"
+      "Bash(pytest tests/test_pyffish.py -v)",
+      "Skill(gsd:settings)"
     ]
   }
 }
