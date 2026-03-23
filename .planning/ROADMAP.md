@@ -116,7 +116,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 05. Board Rendering | 0/3 | Not started | - |
+| 05. Board Rendering | 2/3 | In progress | 05-01, 05-02 |
 | 06. Piece Interaction | 0/? | Not started | - |
 | 07. AI Interface + Game State | 0/? | Not started | - |
 | 08. Game Control | 0/? | Not started | - |

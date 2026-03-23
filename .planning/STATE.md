@@ -9,7 +9,7 @@ progress:
   completed_phases: 0
   total_plans: 3
   completed_plans: 2
-  percent: 0
+  percent: 67
 ---
 
 # Project State
@@ -31,7 +31,7 @@ Install missing packages with `pip install` inside that environment.
 ## Current Position
 
 Phase: 05 (board-rendering) — EXECUTING
-Plan: 3 of 3
+Plan: 3 of 3 (completed: 05-01, 05-02; next: 05-03)
 
 ## Phase Structure
 
@@ -42,7 +42,7 @@ Plan: 3 of 3
 | 07 | AI Interface + Game State | AI-01, AI-02, AI-03, AI-04, UI-06, UI-07 | Not started |
 | 08 | Game Control | UI-08, UI-09 | Not started |
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███████░░░] 67%
 
 ## Accumulated Context
 
