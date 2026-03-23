@@ -38,11 +38,12 @@ created: 2026-03-23
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 05-01-01 | 01 | 1 | UI-01 | unit | `pytest tests/ui/test_constants.py -v` | W0 | pending |
-| 05-01-02 | 01 | 1 | UI-01 | unit | `pytest tests/ui/test_board_items.py -v` | W0 | pending |
-| 05-01-03 | 01 | 1 | UI-01, UI-02 | unit | `pytest tests/ui/test_piece_item.py -v` | W0 | pending |
+| 05-01-01 | 01 | 1 | UI-01 | unit | `python -c "from src.xiangqi.ui.constants import ..."` | — | pending |
+| 05-01-02 | 01 | 1 | UI-01 | unit | `python -c "from src.xiangqi.ui.constants import ..."` | — | pending |
 | 05-02-01 | 02 | 1 | UI-01, UI-02 | unit | `pytest tests/ui/test_board.py -v` | W0 | pending |
 | 05-03-01 | 03 | 2 | UI-01, UI-02 | unit | `pytest tests/ui/test_main.py -v` | W0 | pending |
+| 05-03-02 | 03 | 2 | UI-01, UI-02 | unit | `pytest tests/ui/test_constants.py -v` | W2 | pending |
+| 05-03-03 | 03 | 2 | UI-01, UI-02 | unit | `pytest tests/ui/test_piece_item.py -v` | W2 | pending |
 
 *Status: pending · green · red · flaky*
 
@@ -53,8 +54,7 @@ created: 2026-03-23
 - [ ] `tests/ui/__init__.py` — package marker
 - [ ] `tests/ui/conftest.py` — shared fixtures (QApplication, XiangqiState.starting())
 - [ ] `tests/ui/test_constants.py` — color/font/size constant tests
-- [ ] `tests/ui/test_board_items.py` — PieceItem and BoardBackgroundItem tests
-- [ ] `tests/ui/test_piece_item.py` — piece color/sign rendering tests
+- [ ] `tests/ui/test_piece_item.py` — PieceItem and BoardBackgroundItem tests
 - [ ] `tests/ui/test_board.py` — QXiangqiBoard initialization and resize tests
 - [ ] `tests/ui/test_main.py` — MainWindow title and central widget tests
 
