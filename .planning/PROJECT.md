@@ -47,10 +47,10 @@
 - **Backend**: PyTorch MPS (Apple Silicon Metal Performance Shaders)
 - **UI Framework**: PyQt6 (pending v0.3)
 - **RL Framework**: Custom or Stable-Baselines3
-- **Codebase**: `src/xiangqi/engine/` — 4,056 lines Python
-- **Test Suite**: 179 passed, 1 skipped (pyffish unavailable)
-- **Git Range**: 2026-03-19 → 2026-03-21 (2 days, ~20 commits)
-- **Phase Count**: 7 phases, 11 plans completed
+- **Codebase**: `src/xiangqi/engine/` + `src/xiangqi/ui/` — 4,600+ lines Python
+- **Test Suite**: 207 passed, 1 skipped (pyffish unavailable)
+- **Git Range**: 2026-03-19 → 2026-03-24 (5 days, ~30 commits)
+- **Phase Count**: 5 phases, 17 plans completed (including 3 gap closures)
 
 ## Current Milestone: v0.2 PyQt6 UI
 
