@@ -91,3 +91,9 @@ None - no external service configuration required.
 ---
 *Phase: 05-board-rendering*
 *Completed: 2026-03-24*
+
+## Self-Check: PASSED
+
+- FOUND: src/xiangqi/ui/board.py
+- FOUND: .planning/phases/05-board-rendering/05-06-SUMMARY.md
+- FOUND: dd1d5b1 (task commit)
