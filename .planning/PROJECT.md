@@ -17,11 +17,12 @@
 - [x] Phase 3: 终局判定 (v0.1) — 将死/困毙/和棋规则（含长将/长捉/重复局面）— 30 tests passing
 - [x] Phase 4: API 接口 (v0.1) — XiangqiEngine公共API，FEN往返，undo/redo，perft验证 — 47 tests passing
 - [x] Phase 4.1: Bugfix — is_legal()几何校验，legal_moves()性能优化（29ms→0.54ms）— 47 tests passing
+- [x] Phase 5: 棋盘渲染 (v0.2) — PyQt6 QGraphicsView棋盘，9×10网格，河界，宫斜线，32个棋子渲染 — 28 tests passing
 
 ### Active
 
 - [x] Phase 1-4: 象棋引擎（纯规则，无UI/RL） — v0.1 ✓
-- [ ] 棋盘渲染（QGraphicsView，9×10 + 河/宫） — v0.2
+- [x] Phase 5: 棋盘渲染（QGraphicsView，9×10 + 河/宫） — v0.2 ✓ — 28 tests passing
 - [ ] 棋子交互（选子/高亮/落子） — v0.2
 - [ ] AIPlayer 接口 + RandomAI — v0.2
 - [ ] 游戏控制（新对局/悔棋） — v0.2
