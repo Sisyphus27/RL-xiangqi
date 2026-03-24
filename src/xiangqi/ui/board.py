@@ -140,12 +140,10 @@ class QXiangqiBoard(QGraphicsView):
         # 3. Vertical lines (9 lines at x = 0.6, 1.6, ..., 8.6 cell)
         for col in range(COLS):
             x = (col + 0.6) * cell
-            p.drawLine(QLineF(x, 0.6 * cell, x, 10.6 * cell))
+            p.drawLine(QLineF(x, 0.6 * cell, x, 9.6 * cell))
 
-        # 4. Horizontal lines (10 lines, but skip river gap between row 4 and 5)
+        # 4. Horizontal lines (10 lines at y = 0.6, 1.6, ..., 9.6 cell)
         for row in range(ROWS):
-            if row == 4:  # no line between river rows
-                continue
             y = (row + 0.6) * cell
             p.drawLine(QLineF(0.6 * cell, y, 9.6 * cell, y))
 
