@@ -57,7 +57,7 @@ class QXiangqiBoard(QGraphicsView):
         Holds all PieceItem instances.
 
     Coordinate system (scene coords):
-      - Grid occupies x: [0.6, 9.6] * cell, y: [0.6, 10.6] * cell
+      - Grid occupies x: [0.6, 9.6] * cell, y: [0.6, 9.6] * cell
       - 9 columns (0-8), 10 rows (0-9)
       - Engine row 0 = top (black home), row 9 = bottom (red home)
       - Piece center at (col + 0.6, row + 0.6) * cell
@@ -147,17 +147,13 @@ class QXiangqiBoard(QGraphicsView):
             y = (row + 0.6) * cell
             p.drawLine(QLineF(0.6 * cell, y, 9.6 * cell, y))
 
-        # 5. Palace diagonals
-        # Top palace (rows 0-2): left side (cols 0-2) and right side (cols 6-8)
-        p.drawLine(QLineF((0.6) * cell, (0.6) * cell, (2.6) * cell, (2.6) * cell))  # top-left \
-        p.drawLine(QLineF((2.6) * cell, (0.6) * cell, (0.6) * cell, (2.6) * cell))  # top-left /
-        p.drawLine(QLineF((6.6) * cell, (0.6) * cell, (8.6) * cell, (2.6) * cell))  # top-right \
-        p.drawLine(QLineF((8.6) * cell, (0.6) * cell, (6.6) * cell, (2.6) * cell))  # top-right /
-        # Bottom palace (rows 7-9): left side (cols 0-2) and right side (cols 6-8)
-        p.drawLine(QLineF((0.6) * cell, (7.6) * cell, (2.6) * cell, (9.6) * cell))  # bottom-left \
-        p.drawLine(QLineF((2.6) * cell, (7.6) * cell, (0.6) * cell, (9.6) * cell))  # bottom-left /
-        p.drawLine(QLineF((6.6) * cell, (7.6) * cell, (8.6) * cell, (9.6) * cell))  # bottom-right \
-        p.drawLine(QLineF((8.6) * cell, (7.6) * cell, (6.6) * cell, (9.6) * cell))  # bottom-right /
+        # 5. Palace diagonals (columns 3-5, center of board)
+        # Top palace (rows 0-2): columns 3-5
+        p.drawLine(QLineF((3.6) * cell, (0.6) * cell, (5.6) * cell, (2.6) * cell))  # top \
+        p.drawLine(QLineF((5.6) * cell, (0.6) * cell, (3.6) * cell, (2.6) * cell))  # top /
+        # Bottom palace (rows 7-9): columns 3-5
+        p.drawLine(QLineF((3.6) * cell, (7.6) * cell, (5.6) * cell, (9.6) * cell))  # bottom \
+        p.drawLine(QLineF((5.6) * cell, (7.6) * cell, (3.6) * cell, (9.6) * cell))  # bottom /
 
         # 6. River text "楚河" / "漢界"
         font_river = QFont("SimSun, Microsoft YaHei, Arial")
