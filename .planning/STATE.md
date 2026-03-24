@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T08:41:29.793Z"
+last_updated: "2026-03-24T08:43:30.291Z"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
   percent: 100
 ---
 
@@ -64,6 +64,7 @@ Recent decisions affecting current work:
 - [Phase 05-board-rendering]: Used QRectF wrapper for fillRect coordinates to accept floating-point values in PyQt6
 - [05-06 Complete]: Used QLineF wrapper for drawLine coordinates, completing PyQt6 float-coordinate pattern
 - [Phase 05]: Vertical lines bounded at y=9.6*cell matching last horizontal line (row 9)
+- [Phase 05-board-rendering]: Palace coordinates use column 3.6*cell (left) and 5.6*cell (right) for center placement
 
 ### Pending Todos
 
