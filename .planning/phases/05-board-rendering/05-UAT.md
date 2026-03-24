@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 05-board-rendering
 source:
   - .planning/phases/05-board-rendering/05-01-PLAN-SUMMARY.md
@@ -9,7 +9,7 @@ source:
   - .planning/phases/05-board-rendering/05-05-SUMMARY.md
   - .planning/phases/05-board-rendering/05-06-SUMMARY.md
 started: "2026-03-24T03:27:00Z"
-updated: "2026-03-24T03:35:00Z"
+updated: "2026-03-24T17:20:00Z"
 ---
 
 ## Current Test
@@ -96,31 +96,46 @@ blocked: 0
 ## Gaps
 
 - truth: "Palace diagonal lines form X patterns in correct positions (columns 3-5, rows 0-2 top palace; columns 3-5, rows 7-9 bottom palace)"
-  status: failed
+  status: diagnosed
   reason: "User reported: 实际位置在 top: columns 0-2, 6-8, rows 0-2; bottom: columns 0-2, 6-8, rows 7-9。应该在中间列（columns 3-5）而非两侧。"
   severity: major
   test: 7
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Palace diagonal coordinates used wrong columns (0-2, 6-8) instead of center columns (3-5). The x-coordinates were 0.6/2.6*cell and 6.6/8.6*cell instead of 3.6*cell and 5.6*cell."
+  artifacts:
+    - path: "src/xiangqi/ui/board.py"
+      issue: "Lines 150-156 had incorrect palace diagonal x-coordinates"
+      commit: "342ffb1"
+  missing:
+    - "Change palace x-coordinates to 3.6*cell (left) and 5.6*cell (right)"
+    - "Reduce from 8 diagonal lines to 4 (2 per palace)"
+  debug_session: ".planning/phases/05-board-rendering/05-07-PLAN.md"
 
 - truth: "Grid lines form complete 9×10 grid with river gap between rows 4-5"
-  status: failed
+  status: diagnosed
   reason: "User reported: 黑方的卒前面少了一行，虽然那少的一行有序号但是没有划线"
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Horizontal line loop had incorrect `if row == 4: continue` that skipped drawing the row 4 line. This was based on misunderstanding that river gap affects horizontal lines, when it only affects vertical lines."
+  artifacts:
+    - path: "src/xiangqi/ui/board.py"
+      issue: "Lines 146-150 had `if row == 4: continue` in horizontal line loop"
+      commit: "038852e"
+  missing:
+    - "Remove the `if row == 4: continue` conditional from horizontal line loop"
+    - "Draw all 10 horizontal lines (rows 0-9)"
+  debug_session: ".planning/phases/05-board-rendering/05-08-PLAN.md"
 
 - truth: "Vertical grid lines stay within board boundaries"
-  status: failed
+  status: diagnosed
   reason: "User reported: 红方底线竖着的线超出了边界（黑方正常），直接竖着连接到最边界处了"
   severity: major
   test: 5
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Vertical line end coordinate was 10.6*cell instead of 9.6*cell. The vertical lines extended beyond the last horizontal line (row 9 at y=9.6*cell) to y=10.6*cell, causing visual overflow."
+  artifacts:
+    - path: "src/xiangqi/ui/board.py"
+      issue: "Vertical line y-end coordinate was 10.6*cell instead of 9.6*cell"
+      commit: "342ffb1"
+  missing:
+    - "Change vertical line end coordinate from 10.6*cell to 9.6*cell"
+    - "Update docstring to reflect correct grid y-range: [0.6, 9.6]*cell"
+  debug_session: ".planning/phases/05-board-rendering/05-09-PLAN.md"
