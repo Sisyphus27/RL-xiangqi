@@ -14,7 +14,7 @@ Architecture (from 05-RESEARCH.md):
 
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame
 from PyQt6.QtCore import Qt, QRectF, QPointF
-from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont, QResizeEvent
+from PyQt6.QtGui import QPalette, QPainter, QPen, QBrush, QColor, QFont, QResizeEvent
 
 from src.xiangqi.engine.state import XiangqiState
 from src.xiangqi.engine.types import Piece, ROWS, COLS
@@ -68,7 +68,7 @@ class QXiangqiBoard(QGraphicsView):
         self._state = state or XiangqiState.starting()
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
-        self.setBackgroundRole(Qt.BackgroundRole.NoRole)
+        self.setBackgroundRole(QPalette.ColorRole.NoRole)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setFrameShape(QFrame.Shape.NoFrame)
