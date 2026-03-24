@@ -130,7 +130,7 @@ class QXiangqiBoard(QGraphicsView):
 
         # 1. Green felt background rectangle (slightly larger than grid)
         p.fillRect(
-            -0.6 * cell, -0.6 * cell, 10.2 * cell, 11.2 * cell,
+            QRectF(-0.6 * cell, -0.6 * cell, 10.2 * cell, 11.2 * cell),
             QBrush(QColor(BOARD_BG)),
         )
 
