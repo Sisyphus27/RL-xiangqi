@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T01:34:45.112Z"
+last_updated: "2026-03-24T02:18:08.660Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
@@ -30,8 +30,8 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 06
-Plan: Not started
+Phase: 05 (board-rendering) — EXECUTING
+Plan: 2 of 5
 
 ## Phase Structure
 
@@ -61,6 +61,7 @@ Recent decisions affecting current work:
 - [v0.2 Init]: Generation counter for stale AI result discarding
 - [v0.2 Init]: is_legal() guard on every AI-returned move before apply()
 - [05-03 Complete]: Phase 05 Board Rendering done — QXiangqiBoard + MainWindow + full test suite ✓
+- [Phase 05-board-rendering]: Used QRectF wrapper for fillRect coordinates to accept floating-point values in PyQt6
 
 ### Pending Todos
 

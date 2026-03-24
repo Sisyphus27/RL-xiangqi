@@ -33,7 +33,7 @@
 4. 棋盘在窗口缩放时保持宽高比不变，棋子大小与格宽匹配
 5. 窗口标题显示 "RL-Xiangqi v0.2"
 
-**Plans:** 4/4 plans complete
+**Plans:** 5/5 plans complete
 - [x] 05-01-PLAN.md — UI constants (constants.py, __init__.py)
 - [x] 05-02-PLAN.md — PieceItem rendering (board_items.py)
 - [x] 05-03-PLAN.md — QXiangqiBoard + MainWindow + tests ✓ COMPLETE
@@ -105,7 +105,7 @@
 
 | Phase | Goal | Requirements | Success Criteria |
 |-------|------|--------------|-------------------|
-| 05 - Board Rendering | 4/4 | Complete    | 2026-03-24 |
+| 05 - Board Rendering | 5/5 | Complete   | 2026-03-24 |
 | 06 - Piece Interaction | 点击选子/高亮/落子 | UI-03, UI-04, UI-05 | 5 criteria |
 | 07 - AI Interface + Game State | AI 行棋 + 回合/终局提示 | AI-01, AI-02, AI-03, AI-04, UI-06, UI-07 | 6 criteria |
 | 08 - Game Control | 新对局 + 悔棋 | UI-08, UI-09 | 5 criteria |
