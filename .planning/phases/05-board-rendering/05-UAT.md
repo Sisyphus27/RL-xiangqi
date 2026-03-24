@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: resolved
 phase: 05-board-rendering
 source:
   - .planning/phases/05-board-rendering/05-01-PLAN-SUMMARY.md
@@ -9,7 +9,7 @@ source:
   - .planning/phases/05-board-rendering/05-05-SUMMARY.md
   - .planning/phases/05-board-rendering/05-06-SUMMARY.md
 started: "2026-03-24T03:27:00Z"
-updated: "2026-03-24T17:20:00Z"
+updated: "2026-03-24T17:25:00Z"
 ---
 
 ## Current Test
@@ -20,9 +20,9 @@ updated: "2026-03-24T17:20:00Z"
 
 ### 1. Application Cold Start
 expected: Launch the application from scratch (no prior state). The MainWindow opens successfully without any errors or exceptions. Window displays the xiangqi board UI.
-result: issue
-reported: "成功打开可以看到象棋棋盘界面。但是看到的米字格是在车到相，马到炮的位置。而非应该正确的在帅/将的位置。黑方的卒前面少了一行，虽然那少的一行有序号但是没有划线。其次当前不能点击（不知道是否是这个phase完成）。"
-severity: major
+result: pass
+resolved_by: "05-07, 05-08, 05-09 fixes applied and verified"
+previous_issue: "成功打开可以看到象棋棋盘界面。但是看到的米字格是在车到相，马到炮的位置。而非应该正确的在帅/将的位置。黑方的卒前面少了一行，虽然那少的一行有序号但是没有划线。其次当前不能点击（不知道是否是这个phase完成）。"
 
 ### 2. MainWindow Title and Initial Display
 expected: Window title shows "RL-Xiangqi v0.2". The board is visible in the central widget area.
@@ -38,9 +38,9 @@ result: pass
 
 ### 5. Grid Lines Rendered (9×10)
 expected: Dark green grid lines (#2D5A1B) form a 9-column by 10-row grid. Vertical lines visible from column 0 to 8, horizontal lines from row 0 to 9 with river gap.
-result: issue
-reported: "黑方卒前面少了一行（有行号但无横线）。红方底线竖着的线超出了边界（黑方正常），直接竖着连接到最边界处了。"
-severity: major
+result: pass
+resolved_by: "05-08 (horizontal line), 05-09 (vertical boundary) fixes applied and verified"
+previous_issue: "黑方卒前面少了一行（有行号但无横线）。红方底线竖着的线超出了边界（黑方正常），直接竖着连接到最边界处了。"
 
 ### 6. River Text Display
 expected: Between rows 4 and 5, "楚河" appears on the left side and "漢界" on the right side in dark green text.
@@ -48,9 +48,9 @@ result: pass
 
 ### 7. Palace Diagonal Lines
 expected: Diagonal lines form X patterns in both palace areas (top: columns 3-5, rows 0-2; bottom: columns 3-5, rows 7-9).
-result: issue
-reported: "米字格实际位置：top: columns 0-2, 6-8, rows 0-2; bottom: columns 0-2, 6-8, rows 7-9。应该在中间列（columns 3-5）而非两侧。"
-severity: major
+result: pass
+resolved_by: "05-07 fix applied and verified"
+previous_issue: "米字格实际位置：top: columns 0-2, 6-8, rows 0-2; bottom: columns 0-2, 6-8, rows 7-9。应该在中间列（columns 3-5）而非两侧。"
 
 ### 8. Coordinate Labels
 expected: Column labels (1-9 red at bottom, 9-1 black at top) and row labels (1-10 on left and right edges) are visible.
@@ -87,8 +87,8 @@ result: pass
 ## Summary
 
 total: 15
-passed: 10
-issues: 3
+passed: 13
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
@@ -96,7 +96,7 @@ blocked: 0
 ## Gaps
 
 - truth: "Palace diagonal lines form X patterns in correct positions (columns 3-5, rows 0-2 top palace; columns 3-5, rows 7-9 bottom palace)"
-  status: diagnosed
+  status: resolved
   reason: "User reported: 实际位置在 top: columns 0-2, 6-8, rows 0-2; bottom: columns 0-2, 6-8, rows 7-9。应该在中间列（columns 3-5）而非两侧。"
   severity: major
   test: 7
@@ -109,9 +109,11 @@ blocked: 0
     - "Change palace x-coordinates to 3.6*cell (left) and 5.6*cell (right)"
     - "Reduce from 8 diagonal lines to 4 (2 per palace)"
   debug_session: ".planning/phases/05-board-rendering/05-07-PLAN.md"
+  verified_date: "2026-03-24T17:15:00Z"
+  verified_by: "05-HUMAN-UAT.md visual verification"
 
 - truth: "Grid lines form complete 9×10 grid with river gap between rows 4-5"
-  status: diagnosed
+  status: resolved
   reason: "User reported: 黑方的卒前面少了一行，虽然那少的一行有序号但是没有划线"
   severity: major
   test: 1
@@ -124,9 +126,11 @@ blocked: 0
     - "Remove the `if row == 4: continue` conditional from horizontal line loop"
     - "Draw all 10 horizontal lines (rows 0-9)"
   debug_session: ".planning/phases/05-board-rendering/05-08-PLAN.md"
+  verified_date: "2026-03-24T17:15:00Z"
+  verified_by: "05-HUMAN-UAT.md visual verification"
 
 - truth: "Vertical grid lines stay within board boundaries"
-  status: diagnosed
+  status: resolved
   reason: "User reported: 红方底线竖着的线超出了边界（黑方正常），直接竖着连接到最边界处了"
   severity: major
   test: 5
@@ -139,3 +143,5 @@ blocked: 0
     - "Change vertical line end coordinate from 10.6*cell to 9.6*cell"
     - "Update docstring to reflect correct grid y-range: [0.6, 9.6]*cell"
   debug_session: ".planning/phases/05-board-rendering/05-09-PLAN.md"
+  verified_date: "2026-03-24T17:15:00Z"
+  verified_by: "05-HUMAN-UAT.md visual verification"
