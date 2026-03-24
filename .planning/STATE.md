@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T02:26:30.372Z"
+last_updated: "2026-03-24T03:17:30Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -62,6 +62,7 @@ Recent decisions affecting current work:
 - [v0.2 Init]: is_legal() guard on every AI-returned move before apply()
 - [05-03 Complete]: Phase 05 Board Rendering done — QXiangqiBoard + MainWindow + full test suite ✓
 - [Phase 05-board-rendering]: Used QRectF wrapper for fillRect coordinates to accept floating-point values in PyQt6
+- [05-06 Complete]: Used QLineF wrapper for drawLine coordinates, completing PyQt6 float-coordinate pattern
 
 ### Pending Todos
 

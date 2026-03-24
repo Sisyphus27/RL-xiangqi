@@ -87,6 +87,7 @@
 | 己方棋子预过滤 | generate_legal_moves()先过滤己方目的格，避免不必要board copy | ✓ v0.1 (Bug 2 fix, 58x perf) |
 | 兵前进方向：红-1/黑+1 | 红兵向敌方阵地（row减少），黑兵向红方阵地（row增加） | ✓ v0.1 (Bug fix) |
 | Stalemate=负（中国规则） | 困毙=无合法走法，无论是否被将军均判负 | ✓ v0.1 |
+| PyQt6 float坐标包装 | fillRect用QRectF、drawLine用QLineF包装浮点坐标 | ✓ v0.2 (05-05, 05-06) |
 
 ---
-*Last updated: 2026-03-24 after Phase 05 gap closure (fillRect TypeError fix)*
+*Last updated: 2026-03-24 after Phase 05 gap closure (drawLine TypeError fix)*
