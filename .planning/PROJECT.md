@@ -89,4 +89,4 @@
 | Stalemate=负（中国规则） | 困毙=无合法走法，无论是否被将军均判负 | ✓ v0.1 |
 
 ---
-*Last updated: 2026-03-23 after v0.2 milestone initialization*
+*Last updated: 2026-03-24 after Phase 05 gap closure (fillRect TypeError fix)*
