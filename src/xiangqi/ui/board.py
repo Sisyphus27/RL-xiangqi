@@ -13,7 +13,7 @@ Architecture (from 05-RESEARCH.md):
 """
 
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame
-from PyQt6.QtCore import Qt, QRectF, QPointF
+from PyQt6.QtCore import Qt, QRectF, QPointF, QLineF
 from PyQt6.QtGui import QPalette, QPainter, QPen, QBrush, QColor, QFont, QResizeEvent
 
 from src.xiangqi.engine.state import XiangqiState
@@ -140,26 +140,26 @@ class QXiangqiBoard(QGraphicsView):
         # 3. Vertical lines (9 lines at x = 0.6, 1.6, ..., 8.6 cell)
         for col in range(COLS):
             x = (col + 0.6) * cell
-            p.drawLine(x, 0.6 * cell, x, 10.6 * cell)
+            p.drawLine(QLineF(x, 0.6 * cell, x, 10.6 * cell))
 
         # 4. Horizontal lines (10 lines, but skip river gap between row 4 and 5)
         for row in range(ROWS):
             if row == 4:  # no line between river rows
                 continue
             y = (row + 0.6) * cell
-            p.drawLine(0.6 * cell, y, 9.6 * cell, y)
+            p.drawLine(QLineF(0.6 * cell, y, 9.6 * cell, y))
 
         # 5. Palace diagonals
         # Top palace (rows 0-2): left side (cols 0-2) and right side (cols 6-8)
-        p.drawLine((0.6) * cell, (0.6) * cell, (2.6) * cell, (2.6) * cell)  # top-left \
-        p.drawLine((2.6) * cell, (0.6) * cell, (0.6) * cell, (2.6) * cell)  # top-left /
-        p.drawLine((6.6) * cell, (0.6) * cell, (8.6) * cell, (2.6) * cell)  # top-right \
-        p.drawLine((8.6) * cell, (0.6) * cell, (6.6) * cell, (2.6) * cell)  # top-right /
+        p.drawLine(QLineF((0.6) * cell, (0.6) * cell, (2.6) * cell, (2.6) * cell))  # top-left \
+        p.drawLine(QLineF((2.6) * cell, (0.6) * cell, (0.6) * cell, (2.6) * cell))  # top-left /
+        p.drawLine(QLineF((6.6) * cell, (0.6) * cell, (8.6) * cell, (2.6) * cell))  # top-right \
+        p.drawLine(QLineF((8.6) * cell, (0.6) * cell, (6.6) * cell, (2.6) * cell))  # top-right /
         # Bottom palace (rows 7-9): left side (cols 0-2) and right side (cols 6-8)
-        p.drawLine((0.6) * cell, (7.6) * cell, (2.6) * cell, (9.6) * cell)  # bottom-left \
-        p.drawLine((2.6) * cell, (7.6) * cell, (0.6) * cell, (9.6) * cell)  # bottom-left /
-        p.drawLine((6.6) * cell, (7.6) * cell, (8.6) * cell, (9.6) * cell)  # bottom-right \
-        p.drawLine((8.6) * cell, (7.6) * cell, (6.6) * cell, (9.6) * cell)  # bottom-right /
+        p.drawLine(QLineF((0.6) * cell, (7.6) * cell, (2.6) * cell, (9.6) * cell))  # bottom-left \
+        p.drawLine(QLineF((2.6) * cell, (7.6) * cell, (0.6) * cell, (9.6) * cell))  # bottom-left /
+        p.drawLine(QLineF((6.6) * cell, (7.6) * cell, (8.6) * cell, (9.6) * cell))  # bottom-right \
+        p.drawLine(QLineF((8.6) * cell, (7.6) * cell, (6.6) * cell, (9.6) * cell))  # bottom-right /
 
         # 6. River text "楚河" / "漢界"
         font_river = QFont("SimSun, Microsoft YaHei, Arial")
