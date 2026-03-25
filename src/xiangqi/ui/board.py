@@ -154,15 +154,9 @@ class QXiangqiBoard(QGraphicsView):
             return
         if not self._interactive:
             return  # D-25: silent ignore when disabled
-        # Viewport coordinates from event.position()
-        vp_x = event.position().x()
-        vp_y = event.position().y()
-        # QGraphicsView center-aligns the scene in the viewport.
-        # The viewport-to-scene offset is: scene_x = vp_x - 103.5, scene_y = vp_y - 2.0
-        # (derived empirically: viewport(103,2) maps to scene(0,0))
-        scene_x = vp_x - 103.5
-        scene_y = vp_y - 2.0
-        board_pos = self._scene_to_board(QPointF(scene_x, scene_y))
+        # Use mapToScene for correct coordinate conversion across all viewport sizes
+        scene_pos = self.mapToScene(event.position())
+        board_pos = self._scene_to_board(scene_pos)
         if board_pos is None:
             return
         row, col = board_pos
@@ -189,8 +183,8 @@ class QXiangqiBoard(QGraphicsView):
             if (row, col) == self._selected:
                 # Clicked same piece: deselect (UI-05)
                 self._deselect_piece()
-            elif clicked_piece is not None and clicked_piece._piece_value > 0:
-                # Clicked another red piece: switch selection (D-48)
+            elif clicked_piece is not None and clicked_piece._piece_value * self._engine.turn > 0:
+                # Clicked another piece of current turn's color: switch selection (D-48)
                 self._deselect_piece()
                 self._select_piece(row, col)
             elif self._is_legal_target(from_row, from_col, row, col):
@@ -201,8 +195,8 @@ class QXiangqiBoard(QGraphicsView):
                 self._deselect_piece()
         else:
             # No current selection
-            if clicked_piece is not None and clicked_piece._piece_value > 0:
-                # Clicked red piece: select it (UI-03)
+            if clicked_piece is not None and clicked_piece._piece_value * self._engine.turn > 0:
+                # Clicked piece of current turn's color: select it (UI-03)
                 self._select_piece(row, col)
             # else: click empty or black piece with no selection: ignore
 
