@@ -15,6 +15,8 @@ from PyQt6.QtWidgets import QApplication, QMainWindow
 
 from .board import QXiangqiBoard
 from .constants import DEFAULT_SIZE, MIN_SIZE, MAX_SIZE
+from src.xiangqi.ai import RandomAI
+from src.xiangqi.controller import GameController
 from src.xiangqi.engine.engine import XiangqiEngine
 
 
@@ -24,13 +26,39 @@ class MainWindow(QMainWindow):
 
     Contains a single QXiangqiBoard as the central widget and sets
     the fixed window title and size constraints.
+
+    Attributes
+    ----------
+    _engine : XiangqiEngine
+        Game engine instance.
+    _board : QXiangqiBoard
+        Board widget instance.
+    _ai : RandomAI
+        AI player for black.
+    _controller : GameController
+        Game orchestrator connecting engine, AI, and UI.
     """
 
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("RL-Xiangqi v0.2")
-        engine = XiangqiEngine.starting()
-        self.setCentralWidget(QXiangqiBoard(state=engine.state, engine=engine))
+
+        # Create engine and board
+        self._engine = XiangqiEngine.starting()
+        self._board = QXiangqiBoard(state=self._engine.state, engine=self._engine)
+        self.setCentralWidget(self._board)
+
+        # Create AI player (black)
+        self._ai = RandomAI()
+
+        # Create controller (wires engine, AI, board, and window)
+        self._controller = GameController(
+            engine=self._engine,
+            ai_player=self._ai,
+            board=self._board,
+            main_window=self,
+        )
+
         self.resize(*DEFAULT_SIZE)
         self.setMinimumSize(*MIN_SIZE)
         self.setMaximumSize(*MAX_SIZE)
