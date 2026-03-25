@@ -55,16 +55,29 @@ skipped: 0
 ## Gaps
 
 - truth: "点击红色棋子后显示金色选择环"
-  status: failed
+  status: diagnosed
   reason: "User reported: 我的鼠标能点到，但并不是实际位置。例如我点你说的这个车，只有在点击其右上方才能选中。而且在不同分辨率点的相对位置还不一样。"
   severity: major
   test: 2
-  artifacts: []
-  missing: []
+  root_cause: "Hardcoded viewport-to-scene offset (103.5, 2.0) in mousePressEvent (board.py lines 163-164) does not account for QGraphicsView's dynamic scene centering, which varies with viewport size and resolution. Should use self.mapToScene() instead."
+  artifacts:
+    - path: "src/xiangqi/ui/board.py"
+      issue: "lines 163-164: Hardcoded coordinate conversion vp_x - 103.5, vp_y - 2.0"
+  missing:
+    - "Replace hardcoded offset with self.mapToScene(event.position())"
+  debug_session: ".planning/debug/click-offset.md"
 - truth: "选中另一个红色棋子，之前的选择环和圆点清除，新的棋子显示选择环和合法目标圆点"
-  status: failed
+  status: diagnosed
   reason: "User reported: 我走第一个棋子时会显示可移动位置，当其完成移动后再选择另一个棋子（这时存在黄圈）但是无法进行移动（也没有显示可移动位置）。我也没法操作黑棋"
   severity: major
   test: 5
-  artifacts: []
-  missing: []
+  root_cause: "Turn management mismatch. UI hardcoded to only allow red pieces (lines 192, 204: piece_value > 0), but engine alternates turns. After red moves, turn becomes black, so legal_moves() returns black's moves. Selecting a red piece queries black's legal moves, resulting in empty list."
+  artifacts:
+    - path: "src/xiangqi/ui/board.py"
+      issue: "lines 192, 204: Only allows red piece selection (piece_value > 0)"
+    - path: "src/xiangqi/engine/engine.py"
+      issue: "line 180: Flips turn after move, line 193: legal_moves() returns moves for current turn"
+  missing:
+    - "UI should check engine.turn and only allow selecting pieces of the current turn's color"
+    - "Or implement two-player mode where both sides can be operated"
+  debug_session: ".planning/debug/second-selection-no-legal-moves.md"
