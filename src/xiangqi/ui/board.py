@@ -391,6 +391,14 @@ class QXiangqiBoard(QGraphicsView):
             if isinstance(item, PieceItem):
                 self._scene.removeItem(item)
         self._load_pieces()
+
+        # Recreate highlights at the new scale if a piece is selected (UI-SPEC Responsive Behavior)
+        if self._selected:
+            row, col = self._selected
+            self._clear_highlights()
+            self._selection_ring = self._create_selection_ring(row, col)
+            self._show_legal_moves(row, col)
+
         self.viewport().update()
 
     # ─── piece loading ────────────────────────────────────────────────────────
