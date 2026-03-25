@@ -41,7 +41,7 @@
 4. 点击非合法目标格、敌方棋子格、空白格:取消当前选子,选中状态清除
 5. 轮到黑方(AI)回合时,棋盘交互被禁用(鼠标点击无响应)
 
-**Plans:** 5 plans (1 wave-0 + 2 wave-1 + 1 wave-2 + 1 gap closure)
+**Plans:** 4/6 plans executed
 - [x] **06-00-PLAN.md** — Test scaffold (Wave 0) ✓ COMPLETE
 - [x] **06-01-PLAN.md** — Selection highlighting infrastructure (Wave 1) ✓ COMPLETE
 - [x] **06-02-PLAN.md** — Mouse interaction & move execution (Wave 1) ✓ COMPLETE

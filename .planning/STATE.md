@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
 status: Ready to execute
-last_updated: "2026-03-25T02:54:13.365Z"
+last_updated: "2026-03-25T07:51:03.354Z"
 progress:
   total_phases: 1
   completed_phases: 0
-  total_plans: 4
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
   percent: 100
 ---
 
@@ -31,7 +31,7 @@ Install missing packages with `pip install` inside that environment.
 ## Current Position
 
 Phase: 06 (piece-interaction) — EXECUTING
-Plan: 3 of 4 (06-00 complete)
+Plan: 2 of 2
 
 ## Phase Structure
 
@@ -69,6 +69,7 @@ Recent decisions affecting current work:
 - [06-01 Complete]: Gold ring: 0.85*cell diameter, z=1.1, 3px pen, 70% opacity; dot: 0.50*cell diameter, z=0.5, 50% opacity
 - [06-01 Complete]: Board stores engine reference for legal_moves() queries (not moves passed from outside)
 - [06-01 Complete]: QGraphicsView.mapToScene(int,int) returns QPointF (not list); viewport centering offset handled empirically
+- [Phase 06]: Use XiangqiEngine.starting() factory method for MainWindow initialization
 
 ### Pending Todos
 
