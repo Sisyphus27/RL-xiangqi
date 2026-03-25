@@ -12,6 +12,7 @@ def test_color_constants():
         BLACK_FILL,
         PIECE_TEXT_COLOR,
         PIECE_STROKE_COLOR,
+        HIGHLIGHT_COLOR,
     )
     assert BOARD_BG == "#7BA05B"
     assert GRID_COLOR == "#2D5A1B"
@@ -19,6 +20,7 @@ def test_color_constants():
     assert BLACK_FILL == "#1A1A1A"
     assert PIECE_TEXT_COLOR == "#FFFFFF"
     assert PIECE_STROKE_COLOR == "#FFFFFF"
+    assert HIGHLIGHT_COLOR == "#FFD700"  # Gold accent for selection ring (UI-03)
 
 
 def test_text_color_constants():
