@@ -155,7 +155,8 @@ class QXiangqiBoard(QGraphicsView):
         if not self._interactive:
             return  # D-25: silent ignore when disabled
         # Use mapToScene for correct coordinate conversion across all viewport sizes
-        scene_pos = self.mapToScene(event.position())
+        # event.position() returns QPointF, mapToScene requires QPoint or int coordinates
+        scene_pos = self.mapToScene(event.position().toPoint())
         board_pos = self._scene_to_board(scene_pos)
         if board_pos is None:
             return
