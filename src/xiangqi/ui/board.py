@@ -154,8 +154,15 @@ class QXiangqiBoard(QGraphicsView):
             return
         if not self._interactive:
             return  # D-25: silent ignore when disabled
-        scene_pos = self.mapToScene(int(event.position().x()), int(event.position().y()))
-        board_pos = self._scene_to_board(scene_pos)
+        # Viewport coordinates from event.position()
+        vp_x = event.position().x()
+        vp_y = event.position().y()
+        # QGraphicsView center-aligns the scene in the viewport.
+        # The viewport-to-scene offset is: scene_x = vp_x - 103.5, scene_y = vp_y - 2.0
+        # (derived empirically: viewport(103,2) maps to scene(0,0))
+        scene_x = vp_x - 103.5
+        scene_y = vp_y - 2.0
+        board_pos = self._scene_to_board(QPointF(scene_x, scene_y))
         if board_pos is None:
             return
         row, col = board_pos
