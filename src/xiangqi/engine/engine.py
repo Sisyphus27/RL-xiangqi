@@ -215,6 +215,11 @@ class XiangqiEngine:
         return self._state.board
 
     @property
+    def state(self) -> XiangqiState:
+        """The current XiangqiState. Read-only."""
+        return self._state
+
+    @property
     def turn(self) -> int:
         """+1 if red to move, -1 if black to move. Read-only."""
         return self._state.turn
