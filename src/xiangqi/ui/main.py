@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow
 
 from .board import QXiangqiBoard
 from .constants import DEFAULT_SIZE, MIN_SIZE, MAX_SIZE
+from src.xiangqi.engine.engine import XiangqiEngine
 
 
 class MainWindow(QMainWindow):
@@ -28,7 +29,8 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("RL-Xiangqi v0.2")
-        self.setCentralWidget(QXiangqiBoard())
+        engine = XiangqiEngine.starting()
+        self.setCentralWidget(QXiangqiBoard(state=engine.state, engine=engine))
         self.resize(*DEFAULT_SIZE)
         self.setMinimumSize(*MIN_SIZE)
         self.setMaximumSize(*MAX_SIZE)
