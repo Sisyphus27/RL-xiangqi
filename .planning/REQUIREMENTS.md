@@ -12,9 +12,9 @@
 
 ### UI-02: Interaction
 
-- [ ] **UI-03**: 点击己方棋子选中，合法走法目标格高亮显示
-- [ ] **UI-04**: 点击合法走法目标格执行走法，调用 `engine.apply()`
-- [ ] **UI-05**: 点击非法目标格/空格时取消选子，无效交互
+- [x] **UI-03**: 点击己方棋子选中，合法走法目标格高亮显示
+- [x] **UI-04**: 点击合法走法目标格执行走法，调用 `engine.apply()`
+- [x] **UI-05**: 点击非法目标格/空格时取消选子，无效交互
 
 ### UI-03: Game State
 
@@ -23,8 +23,8 @@
 
 ### UI-04: AI Interface
 
-- [ ] **AI-01**: `AIPlayer` 抽象基类，接口 `suggest_move(snapshot) -> Move | None`
-- [ ] **AI-02**: `EngineSnapshot` 数据类，封装棋盘数组、回合、合法走法（线程安全）
+- [x] **AI-01**: `AIPlayer` 抽象基类，接口 `suggest_move(snapshot) -> Move | None`
+- [x] **AI-02**: `EngineSnapshot` 数据类，封装棋盘数组、回合、合法走法（线程安全）
 - [ ] **AI-03**: `RandomAI` 实现，黑方随机选合法走法
 - [ ] **AI-04**: AI 走子时 UI 显示"AI 思考中..."提示，走完后自动消失
 
@@ -68,13 +68,13 @@ Deferred to future milestones.
 |-------------|-------|--------|
 | UI-01 | Phase 05 | Complete |
 | UI-02 | Phase 05 | Complete |
-| UI-03 | Phase 06 | Pending |
-| UI-04 | Phase 06 | Pending |
-| UI-05 | Phase 06 | Pending |
+| UI-03 | Phase 06 | Complete |
+| UI-04 | Phase 06 | Complete |
+| UI-05 | Phase 06 | Complete |
 | UI-06 | Phase 07 | Pending |
 | UI-07 | Phase 07 | Pending |
-| AI-01 | Phase 07 | Pending |
-| AI-02 | Phase 07 | Pending |
+| AI-01 | Phase 07 | Complete |
+| AI-02 | Phase 07 | Complete |
 | AI-03 | Phase 07 | Pending |
 | AI-04 | Phase 07 | Pending |
 | UI-08 | Phase 08 | Pending |
