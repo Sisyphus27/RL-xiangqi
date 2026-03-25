@@ -13,10 +13,11 @@ Architecture (from 05-RESEARCH.md):
 """
 
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene, QFrame
-from PyQt6.QtCore import Qt, QRectF, QPointF, QLineF
-from PyQt6.QtGui import QPalette, QPainter, QPen, QBrush, QColor, QFont, QResizeEvent
+from PyQt6.QtCore import Qt, QRectF, QPointF, QLineF, pyqtSignal
+from PyQt6.QtGui import QPalette, QPainter, QPen, QBrush, QColor, QFont, QResizeEvent, QMouseEvent
 
 from src.xiangqi.engine.state import XiangqiState
+from src.xiangqi.engine.engine import XiangqiEngine
 from src.xiangqi.engine.types import Piece, ROWS, COLS
 from .board_items import PieceItem
 from .constants import (
@@ -43,6 +44,9 @@ class QXiangqiBoard(QGraphicsView):
     ----------
     state : XiangqiState, optional
         The game state to display. Defaults to XiangqiState.starting().
+    engine : XiangqiEngine, optional
+        The game engine for legal move queries. Defaults to None.
+        When provided, enables mouse interaction (selection, move execution).
     parent : QWidget, optional
         Parent widget.
 
@@ -50,11 +54,29 @@ class QXiangqiBoard(QGraphicsView):
     ----------
     _state : XiangqiState
         Current game state (source of truth for piece positions).
+    _engine : XiangqiEngine | None
+        Engine reference for legal_moves() queries and move application.
+        None for read-only display, required for interaction.
     _cell : float
         Scene cell size in pixels. Updated on every resizeEvent.
         cell = min(viewport_width, viewport_height) / 11.2
     _scene : QGraphicsScene
         Holds all PieceItem instances.
+    _selected : tuple[int, int] | None
+        Currently selected piece (row, col) or None.
+    _selection_ring : QGraphicsEllipseItem | None
+        Gold selection ring around selected piece.
+    _highlight_items : list[QGraphicsEllipseItem]
+        Legal move dot highlight items.
+    _piece_index : dict[tuple[int, int], PieceItem]
+        O(1) lookup index for piece items by board position.
+    _interactive : bool
+        Whether mouse interaction is enabled (default True).
+
+    Signals
+    -------
+    move_applied(from_sq: int, to_sq: int, captured: int)
+        Emitted after a successful move. captured=0 if no capture.
 
     Coordinate system (scene coords):
       - Grid occupies x: [0.6, 9.6] * cell, y: [0.6, 9.6] * cell
@@ -63,9 +85,18 @@ class QXiangqiBoard(QGraphicsView):
       - Piece center at (col + 0.6, row + 0.6) * cell
     """
 
-    def __init__(self, state: XiangqiState | None = None, parent=None) -> None:
+    # Signal: emitted after a successful move is applied (D-19, D-20)
+    move_applied = pyqtSignal(int, int, int)  # from_sq, to_sq, captured_piece_value
+
+    def __init__(
+        self,
+        state: XiangqiState | None = None,
+        engine: XiangqiEngine | None = None,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self._state = state or XiangqiState.starting()
+        self._engine = engine
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
         self.setBackgroundRole(QPalette.ColorRole.NoRole)
@@ -73,8 +104,89 @@ class QXiangqiBoard(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setFrameShape(QFrame.Shape.NoFrame)
         self._cell = 0.0
+        # Interaction state
+        self._selected: tuple[int, int] | None = None
+        self._selection_ring: QGraphicsEllipseItem | None = None
+        self._highlight_items: list[QGraphicsEllipseItem] = []
+        self._piece_index: dict[tuple[int, int], PieceItem] = {}
+        self._interactive: bool = True  # D-27: defaults to enabled
         # Trigger initial layout — resizeEvent(None) computes cell from viewport
         self.resizeEvent(None)
+
+    # ─── interaction control ──────────────────────────────────────────────────
+
+    def set_interactive(self, enabled: bool) -> None:
+        """D-26, D-27: External control of interaction state.
+
+        When disabled, all mouse clicks are silently ignored.
+        Disabling also clears any active selection.
+        """
+        self._interactive = enabled
+        if not enabled:
+            self._deselect_piece()
+
+    # ─── coordinate conversion ───────────────────────────────────────────────
+
+    def _scene_to_board(self, pos: QPointF) -> tuple[int, int] | None:
+        """Convert scene coordinates to board (row, col) or None if outside grid.
+
+        Accounts for 0.6*cell offset in scene coordinate system.
+        Grid bounds: x in [0.6, 9.6]*cell, y in [0.6, 9.6]*cell.
+        """
+        cell = self._cell
+        col = round(pos.x() / cell - 0.6)
+        row = round(pos.y() / cell - 0.6)
+        if 0 <= row < 10 and 0 <= col < 9:
+            return (row, col)
+        return None
+
+    # ─── mouse event handling ──────────────────────────────────────────────────
+
+    def mousePressEvent(self, event: QMouseEvent | None) -> None:
+        """Handle mouse clicks on the board.
+
+        D-22, D-25: Silently ignores clicks when _interactive is False.
+        Converts click position to board (row, col) and delegates to
+        _handle_board_click for selection/move logic.
+        """
+        if event is None:
+            return
+        if not self._interactive:
+            return  # D-25: silent ignore when disabled
+        scene_pos = self.mapToScene(event.position())
+        board_pos = self._scene_to_board(scene_pos)
+        if board_pos is None:
+            return
+        row, col = board_pos
+        self._handle_board_click(row, col)
+
+    # ─── click handling stubs (implemented in Task 2) ─────────────────────────
+
+    def _handle_board_click(self, row: int, col: int) -> None:
+        """Handle a click at board position (row, col).
+
+        Subclass or extend this method to implement selection/move logic.
+        Default: no-op (requires engine to be set).
+        """
+        pass
+
+    def _deselect_piece(self) -> None:
+        """Clear the current selection and all highlights.
+
+        Called when clicking outside legal targets, switching pieces,
+        or when disabling interaction via set_interactive(False).
+        """
+        self._clear_highlights()
+        self._selected = None
+
+    def _clear_highlights(self) -> None:
+        """Remove all highlight items (selection ring + legal move dots) from scene."""
+        for item in self._highlight_items:
+            self._scene.removeItem(item)
+        self._highlight_items.clear()
+        if self._selection_ring is not None:
+            self._scene.removeItem(self._selection_ring)
+            self._selection_ring = None
 
     # ─── resize event ─────────────────────────────────────────────────────────
 
