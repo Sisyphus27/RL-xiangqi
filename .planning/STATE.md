@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
-status: Executing Phase 06
-last_updated: "2026-03-25T02:41:03.744Z"
+status: Ready to execute
+last_updated: "2026-03-25T02:54:13.365Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 25
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -31,14 +31,14 @@ Install missing packages with `pip install` inside that environment.
 ## Current Position
 
 Phase: 06 (piece-interaction) — EXECUTING
-Plan: 2 of 4 (06-00 complete)
+Plan: 3 of 4 (06-00 complete)
 
 ## Phase Structure
 
 | # | Phase | Requirements | Status |
 |---|-------|-------------|--------|
 | 05 | Board Rendering | UI-01, UI-02 | Complete |
-| 06 | Piece Interaction | UI-03, UI-04, UI-05 | In progress (plan 1/4 done) |
+| 06 | Piece Interaction | UI-03, UI-04, UI-05 | In progress (plans 06-00, 06-01 complete; executing 06-02) |
 | 07 | AI Interface + Game State | AI-01, AI-02, AI-03, AI-04, UI-06, UI-07 | Not started |
 | 08 | Game Control | UI-08, UI-09 | Not started |
 
@@ -66,6 +66,9 @@ Recent decisions affecting current work:
 - [Phase 05]: Vertical lines bounded at y=9.6*cell matching last horizontal line (row 9)
 - [Phase 05-board-rendering]: Palace coordinates use column 3.6*cell (left) and 5.6*cell (right) for center placement
 - [Phase 06]: XiangqiEngine.state property added for board fixture contract (06-00)
+- [06-01 Complete]: Gold ring: 0.85*cell diameter, z=1.1, 3px pen, 70% opacity; dot: 0.50*cell diameter, z=0.5, 50% opacity
+- [06-01 Complete]: Board stores engine reference for legal_moves() queries (not moves passed from outside)
+- [06-01 Complete]: QGraphicsView.mapToScene(int,int) returns QPointF (not list); viewport centering offset handled empirically
 
 ### Pending Todos
 

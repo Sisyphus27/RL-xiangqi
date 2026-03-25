@@ -19,7 +19,7 @@
 - [x] 05-04-PLAN.md through 05-41-PLAN.md — Phase 05 iterations (COMPLETE)
 
 ### Phase 05 (Board Rendering) — COMPLETE
-### Phase 06 (Piece Interaction) — PLANNED
+### Phase 06 (Piece Interaction) — IN PROGRESS (2/4 plans complete)
 
 **Architecture Notes:**
 - Three-layer separation: UI (`src/xiangqi/ui/`) -- GameController (`src/xiangqi/controller/`) -- AI (`src/xiangqi/ai/`) -- Engine (`src/xiangqi/engine/`, v0.1 existing)
@@ -42,9 +42,9 @@
 5. 轮到黑方(AI)回合时,棋盘交互被禁用(鼠标点击无响应)
 
 **Plans:** 4 plans (1 wave-0 + 2 wave-1 + 1 wave-2)
-- [ ] **06-00-PLAN.md** — Test scaffold (Wave 0)
-- [ ] **06-01-PLAN.md** — Selection highlighting infrastructure (Wave 1)
-- [ ] **06-02-PLAN.md** — Mouse interaction & move execution (Wave 1)
+- [x] **06-00-PLAN.md** — Test scaffold (Wave 0) ✓ COMPLETE
+- [x] **06-01-PLAN.md** — Selection highlighting infrastructure (Wave 1) ✓ COMPLETE
+- [~] **06-02-PLAN.md** — Mouse interaction & move execution (Wave 1) [executing]
 - [ ] **06-03-PLAN.md** — Testing & validation (Wave 2)
 
 ### Phase 07 (AI Interface + Game State) — Not started
