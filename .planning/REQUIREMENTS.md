@@ -18,15 +18,15 @@
 
 ### UI-03: Game State
 
-- [ ] **UI-06**: 当前回合提示（红方/黑方）
-- [ ] **UI-07**: 对局结束提示（红胜/黑胜/和棋），弹窗显示
+- [x] **UI-06**: 当前回合提示（红方/黑方）
+- [x] **UI-07**: 对局结束提示（红胜/黑胜/和棋），弹窗显示
 
 ### UI-04: AI Interface
 
 - [x] **AI-01**: `AIPlayer` 抽象基类，接口 `suggest_move(snapshot) -> Move | None`
 - [x] **AI-02**: `EngineSnapshot` 数据类，封装棋盘数组、回合、合法走法（线程安全）
 - [ ] **AI-03**: `RandomAI` 实现，黑方随机选合法走法
-- [ ] **AI-04**: AI 走子时 UI 显示"AI 思考中..."提示，走完后自动消失
+- [x] **AI-04**: AI 走子时 UI 显示"AI 思考中..."提示，走完后自动消失
 
 ### UI-05: Game Control
 
@@ -71,12 +71,12 @@ Deferred to future milestones.
 | UI-03 | Phase 06 | Complete |
 | UI-04 | Phase 06 | Complete |
 | UI-05 | Phase 06 | Complete |
-| UI-06 | Phase 07 | Pending |
-| UI-07 | Phase 07 | Pending |
+| UI-06 | Phase 07 | Complete |
+| UI-07 | Phase 07 | Complete |
 | AI-01 | Phase 07 | Complete |
 | AI-02 | Phase 07 | Complete |
 | AI-03 | Phase 07 | Pending |
-| AI-04 | Phase 07 | Pending |
+| AI-04 | Phase 07 | Complete |
 | UI-08 | Phase 08 | Pending |
 | UI-09 | Phase 08 | Pending |
 
