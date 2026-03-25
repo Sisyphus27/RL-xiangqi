@@ -19,7 +19,7 @@
 - [x] 05-04-PLAN.md through 05-41-PLAN.md — Phase 05 iterations (COMPLETE)
 
 ### Phase 05 (Board Rendering) — COMPLETE
-### Phase 06 (Piece Interaction) — IN PROGRESS (3/5 plans complete, 2 gap closure plans)
+### Phase 06 (Piece Interaction) — COMPLETE
 
 **Architecture Notes:**
 - Three-layer separation: UI (`src/xiangqi/ui/`) -- GameController (`src/xiangqi/controller/`) -- AI (`src/xiangqi/ai/`) -- Engine (`src/xiangqi/engine/`, v0.1 existing)
@@ -41,15 +41,49 @@
 4. 点击非合法目标格、敌方棋子格、空白格:取消当前选子,选中状态清除
 5. 轮到黑方(AI)回合时,棋盘交互被禁用(鼠标点击无响应)
 
-**Plans:** 4/6 plans executed
+**Plans:** 5/6 plans executed (06-03 automated tests deferred)
 - [x] **06-00-PLAN.md** — Test scaffold (Wave 0) ✓ COMPLETE
 - [x] **06-01-PLAN.md** — Selection highlighting infrastructure (Wave 1) ✓ COMPLETE
 - [x] **06-02-PLAN.md** — Mouse interaction & move execution (Wave 1) ✓ COMPLETE
 - [x] **06-04-PLAN.md** — Engine wiring gap closure ✓ COMPLETE
-- [ ] **06-05-PLAN.md** — Click offset & turn management gap closure (Wave 1)
+- [x] **06-05-PLAN.md** — Click offset & turn management gap closure ✓ COMPLETE
+- [ ] **06-03-PLAN.md** — Automated test implementation (Wave 2, deferred)
 
-### Phase 07 (AI Interface + Game State) — Not started
-### Phase 08 (Game Control) — Not started
+---
+
+### Phase 07: AI Interface + Game State
+**Goal:** 实现AI抽象接口、RandomAI黑方、回合/游戏状态UI提示
+**Depends on:** Phase 06
+**Requirements:** AI-01, AI-02, AI-03, AI-04, UI-06, UI-07
+**Success Criteria** (what must be TRUE):
+1. AIPlayer ABC 定义: `suggest_move(snapshot: EngineSnapshot) -> Move | None`
+2. EngineSnapshot 数据类封装棋盘状态、回合、合法走法（线程安全）
+3. RandomAI 实现并在黑方回合调用，返回随机合法走法
+4. 黑方回合时UI显示"AI 思考中..."提示，走子后自动消失
+5. UI显示当前回合指示器（红方/黑方）
+6. 游戏结束时弹窗显示结果（红胜/黑胜/和棋）
+7. 黑方走子期间棋盘交互被禁用（`set_interactive(False)`）
+
+**Plans:** 0/X plans defined
+- [ ] Phase 07 context gathering required
+
+---
+
+### Phase 08: Game Control
+**Goal:** 新对局按钮、悔棋功能（支持连续悔棋）
+**Depends on:** Phase 07
+**Requirements:** UI-08, UI-09
+**Success Criteria** (what must be TRUE):
+1. "新对局"按钮重置棋盘到初始局面（调用 `engine.reset()` 或重新创建引擎）
+2. "悔棋"按钮调用 `engine.undo()` 撤销最近一步走法
+3. 支持连续悔棋，可撤销多步
+4. 悔棋后UI正确更新（棋盘状态、回合指示、选择状态清除）
+5. AI回合期间控制按钮可用（允许用户随时开始新对局）
+
+**Plans:** 0/X plans defined
+- [ ] Phase 08 context gathering required
+
+---
 
 *Roadmap created: 2026-03-23*
 *Phase numbering continues from v0.1 (v0.1 ended at 04.1)*
