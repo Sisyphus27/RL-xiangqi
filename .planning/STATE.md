@@ -73,10 +73,11 @@ Recent decisions affecting current work:
 - [06-04 Complete]: Engine wiring pattern — create engine, then pass engine.state and engine to QXiangqiBoard
 - [06-05 Complete]: Use mapToScene(event.position().toPoint()) for accurate viewport-to-scene coordinate conversion
 - [06-05 Complete]: Turn-aware piece selection: piece_value * engine.turn > 0 for alternating red/black gameplay
+- [07-Context Complete]: Phase 07 context gathered — status bar turn indicator, QThread+moveToThread, EngineSnapshot copy, QMessageBox game over, immediate AI execution
 
 ### Pending Todos
 
-- Phase 07: AIPlayer ABC + EngineSnapshot + RandomAI + turn/game-over UI + AI thinking indicator
+- Phase 07: AIPlayer ABC + EngineSnapshot + RandomAI + turn/game-over UI + AI thinking indicator (context complete)
 - Phase 08: New game button + undo (with continuous support)
 
 ### Blockers/Concerns
