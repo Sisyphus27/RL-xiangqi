@@ -1,5 +1,5 @@
 """Game controller and AI worker for RL-Xiangqi."""
-# GameController will be added in Task 2
+from .game_controller import GameController
 from .ai_worker import AIWorker
 
-__all__ = ["AIWorker"]
+__all__ = ["GameController", "AIWorker"]
