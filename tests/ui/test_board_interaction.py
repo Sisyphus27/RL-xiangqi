@@ -161,7 +161,7 @@ class TestPieceIndex:
 
     def test_piece_index_red_chariot_lookup(self, board_with_engine):
         """_piece_index.get((row, col)) returns the correct PieceItem."""
-        piece = board_with_engine._piece_index.get((6, 4))
+        piece = board_with_engine._piece_index.get((9, 0))  # Red chariot at col 0, row 9
         assert piece is not None
         assert piece._piece_value == 5  # Red chariot = +5
 

@@ -9,6 +9,7 @@ PIECE_TEXT_COLOR = "#FFFFFF"    # white text on pieces
 PIECE_STROKE_COLOR = "#FFFFFF"  # white border around all pieces
 RIVER_TEXT_COLOR = "#2D5A1B"   # "楚河"/"漢界" fill (same as grid)
 COORD_TEXT_COLOR = "#2D5A1B"    # row/col labels
+HIGHLIGHT_COLOR = "#FFD700"    # Gold accent for selection ring and legal move dots (D-05, UI-03)
 
 # Derived size ratios (D-12, font size ratios from UI-SPEC)
 CELL_RATIO = 0.80           # piece diameter / cell

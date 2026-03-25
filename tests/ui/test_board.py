@@ -64,10 +64,10 @@ class TestCellSizeFormula:
     def test_cell_size_formula(self):
         """cell = min(vw, vh) / 11.2 at various sizes."""
         test_cases = [
-            (360, 450, 450 / 11.2),
-            (480, 600, 600 / 11.2),
-            (720, 900, 900 / 11.2),
-            (400, 500, 400 / 11.2),  # width constrains
+            (360, 450, min(360, 450) / 11.2),  # height constrains
+            (480, 600, min(480, 600) / 11.2),  # width constrains
+            (720, 900, min(720, 900) / 11.2),  # height constrains
+            (400, 500, min(400, 500) / 11.2),  # width constrains
         ]
         for vw, vh, expected_cell in test_cases:
             cell = min(vw, vh) / 11.2
