@@ -19,7 +19,7 @@
 - [x] 05-04-PLAN.md through 05-41-PLAN.md — Phase 05 iterations (COMPLETE)
 
 ### Phase 05 (Board Rendering) — COMPLETE
-### Phase 06 (Piece Interaction) — IN PROGRESS (2/4 plans complete)
+### Phase 06 (Piece Interaction) — IN PROGRESS (3/5 plans complete, 2 gap closure plans)
 
 **Architecture Notes:**
 - Three-layer separation: UI (`src/xiangqi/ui/`) -- GameController (`src/xiangqi/controller/`) -- AI (`src/xiangqi/ai/`) -- Engine (`src/xiangqi/engine/`, v0.1 existing)
@@ -41,11 +41,12 @@
 4. 点击非合法目标格、敌方棋子格、空白格:取消当前选子,选中状态清除
 5. 轮到黑方(AI)回合时,棋盘交互被禁用(鼠标点击无响应)
 
-**Plans:** 4 plans (1 wave-0 + 2 wave-1 + 1 wave-2)
+**Plans:** 5 plans (1 wave-0 + 2 wave-1 + 1 wave-2 + 1 gap closure)
 - [x] **06-00-PLAN.md** — Test scaffold (Wave 0) ✓ COMPLETE
 - [x] **06-01-PLAN.md** — Selection highlighting infrastructure (Wave 1) ✓ COMPLETE
-- [~] **06-02-PLAN.md** — Mouse interaction & move execution (Wave 1) [executing]
-- [ ] **06-03-PLAN.md** — Testing & validation (Wave 2)
+- [x] **06-02-PLAN.md** — Mouse interaction & move execution (Wave 1) ✓ COMPLETE
+- [x] **06-04-PLAN.md** — Engine wiring gap closure ✓ COMPLETE
+- [ ] **06-05-PLAN.md** — Click offset & turn management gap closure (Wave 1)
 
 ### Phase 07 (AI Interface + Game State) — Not started
 ### Phase 08 (Game Control) — Not started
