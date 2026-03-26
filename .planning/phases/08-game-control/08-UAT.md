@@ -1,11 +1,12 @@
 ---
-status: partial
+status: complete
 phase: 08-game-control
 source:
   - 08-01-SUMMARY.md
   - 08-02-SUMMARY.md
+  - 08-03-SUMMARY.md
 started: 2026-03-26T10:15:00Z
-updated: 2026-03-26T02:26:00Z
+updated: 2026-03-26T03:20:00Z
 ---
 
 ## Current Test
@@ -41,15 +42,14 @@ result: pass
 
 ### 7. AI思考期间按钮状态
 expected: AI思考期间，"悔棋"按钮禁用，"新对局"按钮保持可用
-result: issue
-reported: "ai目前没有思考期间，因为随机所以很快。不过我发现当我执黑时。如果不断悔棋会导致红方先走的最初一步也会被悔棋。这时ai就不会走动了。陷入僵局，因为我执黑。"
-severity: blocker
+result: pass
+fixed_by: 08-04-PLAN.md (gap closure: trigger AI via _start_ai_turn() when turn restored to AI after undo)
 
 ## Summary
 
 total: 7
-passed: 6
-issues: 1
+passed: 7
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
@@ -70,8 +70,12 @@ blocked: 0
   debug_session: ""
 
 - truth: "连续悔棋后游戏状态正确，AI能正常继续走子"
-  status: failed
-  reason: "User reported: 当我执黑时，不断悔棋会导致红方先走的最初一步也被悔棋。之后ai就不会走动了，陷入僵局"
+  status: resolved
+  reason: "Verified by user: pass confirmed after 08-04 fix (undo deadlock fix committed)"
   severity: blocker
   test: 7
-  root_cause: ""
+  root_cause: "undo() did not call _start_ai_turn() when turn restored to AI after undo"
+  artifacts:
+    - path: src/xiangqi/controller/game_controller.py
+      line: "~290"
+      fix: "Added check: if turn == self._ai_side: self._start_ai_turn()"
