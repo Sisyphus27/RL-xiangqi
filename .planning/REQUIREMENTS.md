@@ -30,8 +30,8 @@
 
 ### UI-05: Game Control
 
-- [ ] **UI-08**: 新对局按钮，重置到初始局面
-- [ ] **UI-09**: 悔棋功能（`engine.undo()`），支持连续悔棋
+- [x] **UI-08**: 新对局按钮，重置到初始局面
+- [x] **UI-09**: 悔棋功能（`engine.undo()`），支持连续悔棋
 
 ## v2 Requirements
 
@@ -77,8 +77,8 @@ Deferred to future milestones.
 | AI-02 | Phase 07 | Complete |
 | AI-03 | Phase 07 | Complete |
 | AI-04 | Phase 07 | Complete |
-| UI-08 | Phase 08 | Pending |
-| UI-09 | Phase 08 | Pending |
+| UI-08 | Phase 08 | Complete |
+| UI-09 | Phase 08 | Complete |
 
 **Coverage:**
 - v1 requirements: 13 total
