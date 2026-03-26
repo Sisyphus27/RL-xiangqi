@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
-status: Phase complete — ready for verification
-last_updated: "2026-03-26T02:02:53.447Z"
+status: Ready to execute
+last_updated: "2026-03-26T02:40:45.197Z"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 11
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
   percent: 50
 ---
 
@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 08 — Game Control
+**Current focus:** Phase 08 — game-control
 
 ## Runtime Environment
 
@@ -30,8 +30,8 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 08 (Game Control) — EXECUTING
-Plan: 2 of 2
+Phase: 08 (game-control) — EXECUTING
+Plan: 2 of 3
 
 ## Phase Structure
 
