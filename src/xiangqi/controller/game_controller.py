@@ -292,6 +292,12 @@ class GameController(QObject):
         # Emit turn changed signal
         self.turn_changed.emit(self._engine.turn)
 
+        # After undo, if it's now the AI's turn, trigger AI to move
+        # _ai_side is the opposite of _human_side (Red if human is Black, Black if human is Red)
+        _ai_side = -self._human_side
+        if self._engine.turn == _ai_side and not (self._ai_thread is not None and self._ai_thread.isRunning()):
+            self._start_ai_turn()
+
         # Update undo button state
         can_undo = len(self._engine.move_history) > 0
         self.undo_available.emit(can_undo)
