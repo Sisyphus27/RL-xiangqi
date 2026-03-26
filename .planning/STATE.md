@@ -1,26 +1,26 @@
 ---
 gsd_state_version: 1.0
 milestone: v0.2
-milestone_name: PyQt6 UI
-status: roadmap_created
-stopped_at: Roadmap created, awaiting Phase 05 plan
-last_updated: "2026-03-23"
+milestone_name: PyQt6 UI + RandomAI + AI Interface
+status: Milestone complete — archived to milestones/v0.2-ROADMAP.md
+last_updated: "2026-03-26T12:50:00+08:00"
+summary: ".planning/milestones/v0.2-ROADMAP.md"
 progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 8
+  completed_phases: 8
+  total_plans: 22
+  completed_plans: 22
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-23)
+See: .planning/PROJECT.md (updated 2026-03-26 after v0.2 completion)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 05 — Board Rendering
+**Current focus:** v0.3 — Gymnasium RL Environment
 
 ## Runtime Environment
 
@@ -31,43 +31,37 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 05 (Board Rendering)
-Plan: Not started
-Status: Roadmap created, ready for planning
+v0.2 milestone COMPLETE — archived
 
-## Phase Structure
+## Milestone History
 
-| # | Phase | Requirements | Status |
-|---|-------|-------------|--------|
-| 05 | Board Rendering | UI-01, UI-02 | Not started |
-| 06 | Piece Interaction | UI-03, UI-04, UI-05 | Not started |
-| 07 | AI Interface + Game State | AI-01, AI-02, AI-03, AI-04, UI-06, UI-07 | Not started |
-| 08 | Game Control | UI-08, UI-09 | Not started |
-
-Progress: [░░░░░░░░░░] 0%
+| Version | Status | Completed | Archive |
+|---------|--------|----------|---------|
+| v0.1 | Complete | 2026-03-19 | v0.1-ROADMAP.md |
+| v0.2 | Complete | 2026-03-26 | v0.2-ROADMAP.md |
+| v0.3 | Next | — | — |
 
 ## Accumulated Context
 
-### Decisions
+### Key Accomplishments (v0.2)
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+- PyQt6 QGraphicsView board with 9×10 grid, river, palace diagonals
+- Turn-aware piece selection with gold highlight ring and legal move dots
+- AIPlayer ABC + EngineSnapshot (frozen, thread-safe) + RandomAI
+- GameController with QThread AI worker and status bar indicators
+- New Game + Undo toolbar with keyboard shortcuts
+- Random side assignment (human plays Red or Black)
+- 13/13 v1 requirements satisfied
 
-- [v0.2 Init]: PyQt6 UI — QGraphicsView + QGraphicsScene, click-to-move (not drag)
-- [v0.2 Init]: AIPlayer ABC + EngineSnapshot — core AI interface contract
-- [v0.2 Init]: RandomAI — black plays random legal move
-- [v0.2 Init]: QThread worker (moveToThread) — AI off main thread, "AI 思考中" indicator
-- [v0.2 Init]: EngineSnapshot for thread safety — engine reference never crosses thread boundary
-- [v0.2 Init]: Generation counter for stale AI result discarding
-- [v0.2 Init]: is_legal() guard on every AI-returned move before apply()
+### Tech Debt (v0.2)
 
-### Pending Todos
+- Nyquist VALIDATION.md not finalized across phases
+- Phase-level SUMMARY.md missing for phases 07 and 08
+- Phase 08 VALIDATION.md entirely missing
 
-- Phase 05: Board rendering with QGraphicsView + QGraphicsScene
-- Phase 06: Piece interaction (select/highlight/move)
-- Phase 07: AIPlayer ABC + EngineSnapshot + RandomAI + turn/game-over UI
-- Phase 08: New game button + undo (with continuous support)
+## Next
 
-### Blockers/Concerns
+Run `/gsd:new-milestone v0.3` to start planning Gymnasium RL Environment.
 
-None — roadmap created.
+---
+*Last updated: 2026-03-26 after v0.2 milestone completion*

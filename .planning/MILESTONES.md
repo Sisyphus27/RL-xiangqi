@@ -17,3 +17,22 @@
 **Known gaps:** pyffish cross-validation skipped (stockfish unavailable on Windows); END-01/02/03/04 checkboxes not updated in archived REQUIREMENTS.md
 
 ---
+
+## v0.2 PyQt6 UI + RandomAI + AI Interface (Shipped: 2026-03-26)
+
+**Phases:** 4 phases (05-08) | **Plans:** 22+ | **Commits:** 112 (since v0.2 start)
+**Files changed:** 29 | **Lines added:** 2,784 | **Timeline:** 4 days
+
+**Key accomplishments:**
+
+- **PyQt6 board rendering** — QGraphicsView 9×10 grid, river gap, palace diagonals in center columns, 32 pieces with Chinese chars, responsive scaling
+- **Turn-aware piece interaction** — gold selection ring, legal move dots, mapToScene() coordinate conversion, click-to-move
+- **AIPlayer ABC + EngineSnapshot** — frozen dataclass with thread-safe deep copy, AIPlayer.suggest_move() contract
+- **RandomAI** — black side AI returning random legal moves via EngineSnapshot.legal_moves
+- **GameController orchestration** — QThread AI worker, status bar "AI 思考中..." indicator, QMessageBox game-over popup
+- **Game control toolbar** — New Game + Undo buttons, Ctrl+N/Ctrl+Z shortcuts, double-step undo for human+AI pair
+- **Random side assignment** — human randomly plays Red or Black each new game
+
+**Known gaps:** Nyquist VALIDATION.md not finalized; phase-level SUMMARY.md missing for 07/08
+
+---
