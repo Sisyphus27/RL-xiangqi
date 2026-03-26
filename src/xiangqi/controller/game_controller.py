@@ -246,7 +246,7 @@ class GameController(QObject):
         self._engine.reset()
 
         # Reset board to match engine state
-        self._board.reset_to_state(self._engine.state)
+        self._board.sync_state(self._engine.state)
 
         # Re-randomize human side for variety
         self._human_side = random.choice([1, -1])

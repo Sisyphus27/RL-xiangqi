@@ -414,6 +414,38 @@ class QXiangqiBoard(QGraphicsView):
                 self._scene.addItem(piece_item)
                 self._piece_index[(row, col)] = piece_item  # D-15: index
 
+    def refresh_pieces(self) -> None:
+        """Refresh piece display to match current engine state.
+
+        Clears all piece items from the scene and reloads them based on
+        the current _state. Used after engine reset or undo operations.
+        """
+        # Remove all existing piece items
+        for item in list(self._scene.items()):
+            if isinstance(item, PieceItem):
+                self._scene.removeItem(item)
+
+        # Clear selection state
+        self._deselect_piece()
+
+        # Reload pieces from current state
+        self._load_pieces()
+
+        # Update viewport
+        self.viewport().update()
+
+    def sync_state(self, state: XiangqiState) -> None:
+        """Sync board to a new state and refresh display.
+
+        Updates internal _state reference and reloads all pieces.
+        Used by GameController after engine reset or undo.
+
+        Args:
+            state: New XiangqiState to display
+        """
+        self._state = state
+        self.refresh_pieces()
+
     # ─── board background rendering ───────────────────────────────────────────
 
     def drawBackground(self, painter: QPainter, rect: QRectF) -> None:
