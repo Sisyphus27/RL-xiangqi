@@ -287,7 +287,7 @@ class GameController(QObject):
             self._engine.undo()
 
         # Update board to reflect new state
-        self._board.reset_to_state(self._engine.state)
+        self._board.sync_state(self._engine.state)
 
         # Emit turn changed signal
         self.turn_changed.emit(self._engine.turn)
