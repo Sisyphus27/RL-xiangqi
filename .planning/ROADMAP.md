@@ -82,8 +82,11 @@
 4. 悔棋后UI正确更新（棋盘状态、回合指示、选择状态清除）
 5. AI回合期间控制按钮可用（允许用户随时开始新对局）
 
-**Plans:** 3/3 plans complete
-- [x] Phase 08 context gathering required (completed 2026-03-26)
+**Plans:** 4/4 plans (3 complete + 1 gap closure)
+- [x] 08-01-PLAN.md — Toolbar buttons and keyboard shortcuts
+- [x] 08-02-PLAN.md — Undo functionality
+- [x] 08-03-PLAN.md — Gap closure: fix sync_state call in undo()
+- [ ] 08-04-PLAN.md — Gap closure: fix continuous undo deadlock when human plays Black
 
 ---
 
