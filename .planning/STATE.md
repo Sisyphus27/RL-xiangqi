@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v0.2
 milestone_name: milestone
-status: Ready to plan
-last_updated: "2026-03-25T14:40:16.358Z"
+status: Phase complete — ready for verification
+last_updated: "2026-03-26T02:02:53.447Z"
 progress:
   total_phases: 3
-  completed_phases: 1
-  total_plans: 9
-  completed_plans: 8
+  completed_phases: 2
+  total_plans: 11
+  completed_plans: 10
   percent: 50
 ---
 
@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Phase 07 — AI Interface + Game State
+**Current focus:** Phase 08 — Game Control
 
 ## Runtime Environment
 
@@ -30,8 +30,8 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: 08
-Plan: Not started
+Phase: 08 (Game Control) — EXECUTING
+Plan: 2 of 2
 
 ## Phase Structure
 
@@ -77,6 +77,8 @@ Recent decisions affecting current work:
 - [Phase 07-01]: EngineSnapshot is frozen=True with board.copy() for thread safety
 - [Phase 07-03]: GameController is single orchestrator - owns engine, AI, board refs
 - [Phase 07-03]: is_legal() guard mandatory before every AI move apply (D-11)
+- [Phase 08]: Random side assignment: 50% probability for human to play Red or Black
+- [Phase 08]: Double-step undo: undo both human move and AI response together
 
 ### Pending Todos
 
