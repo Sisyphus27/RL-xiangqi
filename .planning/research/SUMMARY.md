@@ -1,17 +1,19 @@
 # Project Research Summary
 
-**Project:** RL-Xiangqi v0.2 PyQt6 UI
-**Domain:** Desktop board game UI with pluggable AI
-**Researched:** 2026-03-23
-**Confidence:** HIGH (PyQt6 patterns verified via multiple open-source projects and official docs; engine API confirmed from existing v0.1 codebase; threading patterns are canonical Qt practices)
+**Project:** RL-Xiangqi v1.0 -- Heterogeneous Multi-Agent RL Predictive Collaboration
+**Domain:** Academic research pipeline (literature survey + algorithm design)
+**Researched:** 2026-03-29
+**Confidence:** HIGH
 
 ---
 
 ## Executive Summary
 
-RL-Xiangqi v0.2 adds a PyQt6 desktop UI on top of the existing v0.1 XiangqiEngine. The product is a minimal human-vs-AI Chinese Chess board where Red (human) plays first and Black (AI) responds with random legal moves. Experts build board game UIs with `QGraphicsView` + `QGraphicsScene` for rendering, a dedicated controller (not the UI itself) for game state management, and a worker-object pattern for background AI computation. The recommended stack is PyQt6 6.8+ with Python 3.12, using a `GameController` that owns the engine instance and mediates all UI-engine communication via `pyqtSignal`.
+RL-Xiangqi v1.0 is a research-only milestone that extends an existing Chinese chess (Xiangqi) multi-agent RL environment into the domain of heterogeneous agent predictive collaboration. The project sits at the intersection of multi-agent reinforcement learning, active inference for teammate modeling, and heterogeneous agent coordination. Experts approach this kind of research through a disciplined literature pipeline: systematic keyword-driven search, manual screening, deep technical analysis, and then algorithm synthesis. The existing codebase already provides a mature Gymnasium environment (XiangqiEnv) with 7 heterogeneous piece-type agents, flat Discrete(8100) action space with per-piece-type masking, and material-plus-outcome reward shaping -- all from the v0.3 milestone. The research phase builds on top of a working DBLP search pipeline (`dblp_search.py` + `dblp_keywords_extract.py`) that is configuration-driven and domain-agnostic, meaning only keyword content needs to change.
 
-The biggest risk in this phase is not the UI rendering -- it is threading. The AI must run in a `QThread` worker (via `moveToThread`, never a `QThread` subclass), the engine must never be shared mutable state between threads, and every AI move must be validated against `engine.is_legal()` before `engine.apply()`. Research across all 4 documents converges on one structural decision: the `AIPlayer` / `EngineSnapshot` / `GameController` interface is the most critical deliverable because it is the foundation every future AI (Alpha-Beta, MCTS, RL) plugs into. The UI itself is straightforward by comparison.
+The recommended approach is a five-phase sequential pipeline where only the first phase involves any code change (a single JSON config file), and the remaining four phases are human-driven research work. The AIM paper (Wu et al., 2025) anchors the domain: its active inference portraits (perception-belief-action) provide the conceptual framework, but critically, AIM was tested only on homogeneous agents. The central research challenge is adapting active inference teammate modeling to agents with fundamentally different action spaces -- a King moves one step, a Chariot moves across the board. Algorithm options include QTypeMix (type-based value decomposition), MAPPO (policy-based CTDE), or a novel hybrid that incorporates AIM's belief portraits into a heterogeneous-aware architecture.
+
+The key risks are: (1) keyword design that is too broad or too narrow, either overwhelming screening or missing relevant work -- mitigated by a two-stage broad-then-fine keyword pipeline with synonym expansion and iterative refinement; (2) premature algorithm commitment before literature analysis is complete -- mitigated by strict phase ordering where algorithm design is the final phase; and (3) the observation representation mismatch -- AIM's viewpoint transformation was designed for partially observable domains with relative-position features, but chess is fully observable with all agents seeing the same board, so the "perception portrait" concept needs fundamental adaptation.
 
 ---
 
@@ -19,159 +21,150 @@ The biggest risk in this phase is not the UI rendering -- it is threading. The A
 
 ### Recommended Stack
 
-PyQt6 6.8+ (minimum) on Python 3.12. PyQt6 6.7.x has Python 3.13 breakage; 6.8+ is fixed. Use `QGraphicsView` + `QGraphicsScene` for the board (built-in hit-testing, layering, coordinate mapping). Use `QGraphicsPixmapItem` for piece sprites with a font fallback stack (BabelStone Xiangqi Unicode font first, then CJK system font, then Chinese characters from the existing engine's `Piece.__str__`). Never use Qt's `QDrag` system for piece movement -- use manual mouse event handling on the graphics items instead. The canonical PyQt threading pattern is a bare `QThread` + a `QObject` worker moved onto it with `moveToThread()`; slots on the worker run in the worker thread.
+The v1.0 milestone requires no new software dependencies. The existing Python stack (requests, pandas, openpyxl, tqdm) powers a configuration-driven DBLP search pipeline that is already built and tested. Only `dblp_config.json` content changes. RL frameworks (PyMARL2, EPyMARL, PettingZoo) and algorithm references (QTypeMix, MAPPO, RODE) are research references for the algorithm design document, not implementation targets. No code is written against these frameworks in v1.0.
 
 **Core technologies:**
-- **PyQt6 6.8+**: UI framework -- `QGraphicsView` for board rendering, `QThread` for AI offloading
-- **Python 3.12**: Project default; fully compatible with PyQt6 6.8+
-- **XiangqiEngine (existing)**: v0.1 engine already provides `apply()`, `legal_moves()`, `is_legal()`, `is_check()`, `result()`, `board` (np.ndarray), `to_fen()` -- zero work needed here
-- **NumPy**: Already in stack; `board.copy()` is the thread-safety boundary for the AI
+- `dblp_search.py` + `dblp_keywords_extract.py`: existing two-stage search pipeline -- domain-agnostic, handles pagination, rate limiting, DOI dedup, Excel output
+- `dblp_config.json`: keyword configuration -- the single file that changes; drives both search breadth and extraction precision
+- `XiangqiEnv` (Gymnasium): existing multi-agent environment -- provides 16-channel observation, per-piece-type action masking, material+outcome rewards (from v0.3)
+- CSV/Markdown: screening and analysis artifacts -- no database, no web app, just version-controlled text files
+
+**What NOT to add:** Ray RLlib (too heavy for research), Stable-Baselines3 (homogeneous agent focus), Streamlit/Flask screening UI (over-engineering), Zotero (collection will stay under 200 papers).
 
 ### Expected Features
 
+This is a research milestone. "Features" are research deliverables, not shipped code.
+
 **Must have (table stakes):**
-- Board geometry: 9x10 grid, river, two palace diagonal boxes, drawn once as cached `QPixmap` background
-- Piece rendering: read `engine.board` (np.ndarray), place one `QGraphicsPixmapItem` per non-zero square
-- Click-to-select + click-to-move: click own piece to select, click destination to move -- no drag-and-drop in v0.2
-- Legal move highlighting: on piece selection, compute `engine.legal_moves()`, decode destinations, show semi-transparent dot overlays -- the single highest-UX-value feature for the MVP
-- Turn management: toggle after every `apply()`, disable board interaction during AI turn
-- AI move execution: `GameController` QThread calls AI plugin, validates move, applies to engine, signals UI
-- New Game / Reset: `engine.reset()` + re-render all state
-- Game over display: check `engine.result()` after each apply; show status text or dialog
+- MARL-focused keyword design in `dblp_config.json` -- broad search keywords (multi-agent RL, heterogeneous, teammate modeling, active inference) plus fine-grained AND/OR extract keywords
+- AAMAS venue added to search list -- the primary multi-agent systems conference
+- Systematic screening workflow with CSV artifacts (shortlist, included, excluded)
+- Per-paper technical analysis with consistent template (contribution, relevance, method, strengths, limitations, applicable ideas)
+- Cross-paper synthesis document identifying patterns, gaps, and algorithmic opportunities
+- Algorithm specification document (`prototypes/algorithm_v1.md`) -- the final deliverable
 
-**Should have (competitive / worth the effort for v0.2):**
-- Captured pieces display: two panels (one per side) showing captured piece symbols from `apply()` return value
-- In-check visual warning: if `engine.is_check()` is True, flash the General's square or show a status banner
-- Current turn indicator: colored label showing "Red to move" / "Black to move"
+**Should have (differentiators):**
+- Keyword iteration loop -- refine keywords based on screening feedback, re-run pipeline cheaply (DOI dedup handles incremental updates)
+- Cross-reference discovery -- follow citation chains from included papers
+- Observation/perspective adaptation design -- how to adapt AIM's perception portrait to fully observable chess (attention over board regions rather than viewpoint transformation)
 
-**Defer (v1.0+):**
-- Drag-and-drop (click-to-move is sufficient for v0.2 validation)
-- Move history log (WXF or ICCS notation)
-- Board flip (rotate perspective)
-- Time controls / clocks
-- PGN / XQF game save/load
-- Sound effects
-- Multiple game tabs
-- Hint / undo AI moves
-- Network / online play
+**Defer (future milestones):**
+- Algorithm implementation in `src/xiangqi/`
+- Training loop and experiment tracking
+- Policy network replacing RandomAI
+- Curriculum learning and heterogeneous-aware mixing networks
 
 ### Architecture Approach
 
-Three-layer separation enforced strictly: **UI layer** (`src/xiangqi/ui/`) owns Qt widgets only and never imports the engine or AI; **Engine layer** (`src/xiangqi/engine/`) is pure Python with zero UI dependencies (already exists from v0.1); **AI layer** (`src/xiangqi/ai/`) receives immutable `EngineSnapshot` dataclasses and returns `Move` objects, never touching the engine. The only layer that imports from all three is `src/xiangqi/controller/` (`GameController` + `GameStateMachine` + `AIWorker`).
+The architecture extends the existing `paper_collect/` directory with three new subdirectories (`screening/`, `analysis/`, `prototypes/`) while leaving `src/xiangqi/` entirely untouched. Data flows in one direction: keywords drive search, search produces a shortlist, screening produces included papers, analysis produces summaries and synthesis, synthesis produces algorithm design. The pipeline is iterative -- if analysis reveals gaps, keywords update and the cycle repeats. The entire `src/xiangqi/` codebase (engine, UI, controller, AI interface, RL environment) is stable and unchanged.
 
-The `GameController` owns the engine instance, implements a `GameStateMachine` with states `WAITING_INPUT / AI_THINKING / ANIMATING / GAME_OVER`, and exposes all UI communication through a `GameSignals` object with typed `pyqtSignal` definitions. The `EngineSnapshot` dataclass (frozen, immutable) captures `board.copy()`, `turn`, `legal_moves`, `is_in_check`, `move_history`, `result`, and `fen` at the moment the AI is invoked -- this is the thread-safety boundary. The `AIPlayer` abstract base class defines `suggest_move(snapshot) -> Move | None`; any implementation (RandomAI, AlphaBetaAI, MCTSAI, RLAgent) satisfies this interface with no controller changes.
+**Major components:**
+1. `dblp_config.json` (MODIFY) -- keyword content redesigned for MARL domain; broad search terms plus nested AND/OR extract groups
+2. `screening/` (NEW) -- manual paper screening artifacts; CSV-based in/exclude decisions with reasons
+3. `analysis/` (NEW) -- per-paper markdown summaries plus cross-paper synthesis and algorithm ideas
+4. `prototypes/` (NEW) -- algorithm specification document; the culminating deliverable of the milestone
+5. `papers/` (EXISTING, grows) -- full-text markdown of collected papers
 
 ### Critical Pitfalls
 
-1. **QThread subclass anti-pattern**: Subclassing `QThread` and putting slots on it causes those slots to run in the main thread. Always use a bare `QThread` + `QObject` worker + `moveToThread()`. Prevention: worker slots run in the thread the QObject lives on.
+1. **QMIX monotonicity limits heterogeneous expressiveness** -- Vanilla QMIX cannot represent negative individual contributions; a defensive piece making an aggressive move gets the wrong gradient. Use QTypeMix or QPLEX instead. Addressed in Phase 5 algorithm design.
 
-2. **AI returns illegal move**: Any AI implementation can bug out and return an illegal move encoding. The controller MUST call `engine.is_legal(move)` before `engine.apply()`. If illegal, fall back to a random legal move and log at ERROR level. Prevention: two-layer validation is mandatory, not optional.
+2. **Observation representation mismatch** -- AIM's viewpoint transformation assumes partially observable domains with relative-position features. Chess is fully observable; all agents see the same board. The perception portrait must be fundamentally rethought (attention over relevant board regions per piece type, not viewpoint transformation). This is the hardest conceptual adaptation. Addressed in Phase 5.
 
-3. **Race condition on engine state**: The AI thread and UI thread share `XiangqiEngine` if the engine reference is passed directly. Always pass a snapshot (`engine.board.copy()` + metadata) to the AI worker; never pass the live engine. Prevention: `EngineSnapshot` dataclass created on the main thread before `moveToThread()`.
+3. **Too-broad or too-narrow keywords** -- "multi-agent" alone returns 50,000+ papers; "active inference" alone misses teammate modeling and Theory of Mind work. Use broad-but-domain-scoped Stage 1 keywords, then AND-logic Stage 2 extract groups with exhaustive synonym expansion. Addressed in Phase 1, iterated in Phase 3.
 
-4. **Event loop blocking**: Any AI computation on the main Qt thread freezes the UI. RandomAI is fast enough to inline, but any RL or Alpha-Beta search must use the worker thread. Prevention: worker object + `moveToThread()` from day one, even for RandomAI, so the pattern is established.
+4. **Premature algorithm commitment** -- Designing the algorithm before completing literature analysis locks in a suboptimal approach. v1.0 exists precisely to prevent this. Enforce strict phase ordering: algorithm design is the final phase. Addressed by workflow discipline.
 
-5. **Dual sources of truth for board state**: If piece positions live in both `XiangqiEngine.board` and in `QGraphicsItem` attributes, they can diverge after moves or undos. Prevention: treat the engine as the single source of truth; `render_board()` re-reads `engine.board` and rebuilds the scene from scratch after every state change.
-
-6. **Stale AI result applied to wrong position**: If a human clicks "Undo" or "Reset" while the AI is thinking, the AI's result is for a position that no longer exists. Prevention: generation counter -- each game/undo increments a counter; AI results carry the generation number; stale results are silently discarded.
+5. **Multiple loss terms causing training instability** -- AIM has 6+ loss terms that may conflict. If we adopt AIM's framework, loss balancing becomes a critical hyperparameter concern. Addressed in Phase 5 -- start simple, add complexity incrementally.
 
 ---
 
 ## Implications for Roadmap
 
-### Phase 1: Board Rendering Shell (static board + pieces)
+Based on research, suggested phase structure:
 
-**Rationale:** Validate the visual output before wiring any interaction. Board geometry, coordinate mapping, and piece placement are the foundation -- if these are wrong, everything else is wrong. This phase is independent and low-risk.
+### Phase 1: Keyword Redesign
+**Rationale:** This is the only phase involving code changes (a single JSON config file). It is the fastest to complete and unblocks all downstream phases. The existing pipeline scripts require zero modification.
+**Delivers:** Updated `dblp_config.json` with MARL-domain keywords and AAMAS venue
+**Addresses:** Literature pipeline table stakes; Category 1 features from FEATURES.md
+**Avoids:** Pitfalls 4.1 (too broad), 4.2 (too narrow), 4.3 (missing terminology variants), 4.4 (missing venues)
 
-**Delivers:** A `BoardWidget` (`QGraphicsView`) that renders the static board (grid, river, palace diagonals, file/rank labels) as a cached `QPixmap`, and renders all 32 pieces from a hardcoded starting position using `QGraphicsPixmapItem`. No interaction yet.
+### Phase 2: Paper Collection
+**Rationale:** Pure execution of existing scripts with new config. No development risk. The scripts handle pagination, rate limiting, retry, and DOI deduplication automatically.
+**Delivers:** `screening/shortlist.csv` with filtered paper candidates
+**Uses:** `dblp_search.py`, `dblp_keywords_extract.py` (unchanged)
+**Implements:** Two-stage keyword pipeline pattern from ARCHITECTURE.md
 
-**Avoids:** Anti-pattern: do NOT wire `engine.board` reads in this phase -- hardcode the starting array so the renderer can be validated independently.
+### Phase 3: Manual Screening
+**Rationale:** Human judgment phase. Researcher reads titles/abstracts, makes in/exclude decisions, collects full-text papers. This is where keyword quality is validated and iteration may be triggered.
+**Delivers:** `screening/included.csv`, `screening/excluded.csv`, new papers in `papers/`
+**Addresses:** Systematic screening workflow from FEATURES.md
+**Avoids:** Pitfall 4.1 (iterates keywords if too many false positives/negatives)
 
-### Phase 2: Interaction Loop (click-to-select, legal highlighting, click-to-move)
+### Phase 4: Technical Analysis
+**Rationale:** Deep reading and structured analysis of included papers. Produces the cross-paper synthesis that identifies algorithmic opportunities and gaps. This is the most intellectually demanding phase.
+**Delivers:** `analysis/summaries/*.md`, `analysis/synthesis.md`, `analysis/algorithm_ideas.md`
+**Addresses:** Category 2-5 feature research from FEATURES.md
+**Avoids:** Pitfall 5.4 (premature algorithm commitment) by completing analysis before design
 
-**Rationale:** The interaction loop is the core user experience and the most fragile part architecturally. Wire it to the real engine from day one to catch encoding/decoding bugs early. This also validates the coordinate mapping (`px` to `from_sq/to_sq`) against the engine's flat-square convention.
-
-**Delivers:** `BoardWidget` with `mousePressEvent` that emits `(from_sq, to_sq)` pairs. `GameController` with a minimal `apply_user_move()` that calls `engine.is_legal()` then `engine.apply()`. `board_changed` signal triggers `render_board()` from `engine.board`. Legal move highlighting via `engine.legal_moves()` on piece selection. Turn management: disable board when `engine.turn` is Black.
-
-**Uses:** `GameSignals` -- define typed `pyqtSignal` objects upfront even though only `board_changed` and `move_applied` are wired in this phase.
-
-**Avoids:** Pitfall 5 (dual state) -- render from engine state on every signal. Pitfall 8 (optimistic rendering) -- validate `is_legal()` before any visual update.
-
-### Phase 3: AI Abstraction + GameController + RandomAI
-
-**Rationale:** The AI interface is the most critical deliverable and must be designed before any AI implementation. `AIPlayer` ABC, `EngineSnapshot`, and `Move` must be in place. `GameController` wires engine + AI + state machine together. Black AI plays random legal moves -- this is the end-to-end validation that the threading model works.
-
-**Delivers:** `src/xiangqi/ai/base.py` with `AIPlayer`, `EngineSnapshot`, `Move`. `src/xiangqi/controller/game_controller.py` with `GameStateMachine` (4 states). `src/xiangqi/ai/random_ai.py` implementing `AIPlayer`. `AIWorker(QObject)` that receives `EngineSnapshot`, calls `ai.suggest_move()`, emits `move_ready`. `GameController` wires `user_move_requested` -> `apply()` -> `ai_thinking_started` -> `AIWorker` -> `move_ready` -> `apply()` -> `board_changed`. Generation counter to discard stale results.
-
-**Avoids:** Pitfall 1 (QThread subclass) -- use `moveToThread()`. Pitfall 2 (illegal moves) -- validate before `apply()`. Pitfall 3 (race condition) -- snapshot pass before worker start. Pitfall 4 (event loop block) -- worker thread from day one. Pitfall 6 (tight coupling) -- `AIPlayer` ABC is the only interface the controller knows.
-
-### Phase 4: Game Polish + End-to-End Validation
-
-**Rationale:** Add the remaining UX features that make the board feel complete: captured pieces, in-check warning, game over dialog, new game button. Validate the full human-vs-AI loop with 5+ complete games.
-
-**Delivers:** Captured pieces panels updated from `engine.apply()` return value. In-check banner from `engine.is_check()`. Game over dialog from `engine.result()`. New game resets engine + UI state. Full end-to-end test: 5 complete games with no crashes, no illegal states.
-
-**Avoids:** Pitfall 10 (no test isolation) -- add `MockEngine` for UI unit tests; keep engine unit tests authoritative.
+### Phase 5: Algorithm Design
+**Rationale:** The culminating phase. Only begins after literature analysis is complete. Synthesizes findings into a concrete algorithm specification for heterogeneous agent predictive collaboration on the Xiangqi domain.
+**Delivers:** `prototypes/algorithm_v1.md` -- architecture, training procedure, evaluation metrics, loss design
+**Addresses:** Algorithm design methodology from FEATURES.md
+**Avoids:** Pitfalls 1.1 (QMIX monotonicity), 3.3 (observation mismatch), 5.3 (training instability) through informed design choices
 
 ### Phase Ordering Rationale
 
-Board rendering (Phase 1) must precede any interaction wiring (Phase 2). Interaction wiring against the live engine (Phase 2) must precede AI integration (Phase 3) because AI integration depends on the controller already being able to apply and display moves. Game polish (Phase 4) is last because it depends on all prior phases being wired. The AI interface design (`AIPlayer` / `EngineSnapshot`) belongs in Phase 3, not Phase 2, because the AI interface is the primary deliverable of Phase 3 -- it cannot be an afterthought.
+- Phase 1 is configuration-only and takes minutes to hours; it unblocks everything with zero risk.
+- Phase 2 uses battle-tested scripts that require no modification; it is pure execution.
+- Phases 3-5 are human-driven research with no code to write and no bugs to fix.
+- Strict sequential ordering (1 then 2 then 3 then 4 then 5) prevents premature algorithm commitment.
+- Iteration is cheap: the pipeline supports incremental re-runs via DOI deduplication, so keyword refinement after Phase 3 does not waste prior work.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (AI Abstraction)**: The `EngineSnapshot` design and `AIPlayer` protocol are well-specified by research, but the exact signal wiring between `GameController` and `AIWorker` (especially the `request_ai_move` vs `thread.started` pattern) should be validated with a minimal prototype before full implementation.
-- **Phase 4 (Polish)**: Unicode piece rendering with BabelStone Xiangqi font availability and graceful fallback should be validated on the target platform (Windows).
+- **Phase 1:** Keyword calibration may require a preliminary test run to gauge result volume (aim for ~5000-10000 from search, ~100-300 after extraction). Not a technical risk but a tuning step.
+- **Phase 5:** This is the most intellectually complex phase. The observation adaptation problem (how to do perception portraits in fully observable chess) has no established answer in the literature. May warrant a focused `/gsd:research-phase` call during planning to investigate attention-based alternatives to viewpoint transformation.
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (Board Rendering)**: `QGraphicsView` + `QPixmap` background is a well-documented Qt pattern. `drawBackground()` override or cached pixmap approach is implementation preference.
-- **Phase 2 (Interaction Loop)**: Click-to-select + legal highlighting is a standard board game pattern; the coordinate mapping (`px` <-> flat square index) is confirmed from the existing engine API.
-
----
+- **Phase 2:** Well-documented scripts, no development needed.
+- **Phase 3:** Standard systematic review methodology, no technical risk.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | PyQt6 6.8+ with Python 3.12 confirmed via PyQt community docs and Stack Overflow. QGraphicsView + QThread patterns canonical from Qt official docs and multiple PyQt tutorials. |
-| Features | HIGH | Board game feature set is well-understood; click-to-move vs drag-and-drop trade-off clearly reasoned. Anti-features explicitly defined. |
-| Architecture | HIGH | `GameController` + `GameStateMachine` + `AIWorker` pattern is standard Qt practice. `EngineSnapshot` is GoF Memento pattern. Three-layer separation is clean software engineering. |
-| Pitfalls | HIGH | All 13 pitfalls identified with concrete prevention strategies. Threading patterns verified against official Qt docs, KDAB, and Real Python. |
+| Stack | HIGH | Existing pipeline verified via direct code analysis; no new dependencies needed |
+| Features | HIGH | Feature categories well-defined from AIM paper analysis and MARL literature survey |
+| Architecture | HIGH | Directory structure and data flow derived from direct codebase analysis; patterns are standard research methodology |
+| Pitfalls | HIGH | Pitfalls identified from MARL literature and AIM paper limitations; prevention strategies are concrete |
+| Algorithm design | MEDIUM | Algorithm is the research output, not the input; specific architecture depends on literature analysis results |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Piece asset rendering**: Whether to use Unicode chess symbols (U+1FA60 range) with BabelStone Xiangqi font or Chinese characters via system CJK font needs a quick platform test. Implementation should use a font-stack fallback: BabelStone Xiangqi -> Noto Sans CJK SC -> Chinese characters from `Piece.__str__`.
-- **Animation smoothness**: Piece animation duration (200-500ms) and easing are not researched; implementer preference for v0.2. `QPropertyAnimation` or `setPos` in a `QTimer.singleShot` are both viable.
-- **PySide6 vs PyQt6 choice**: STACK.md recommends PyQt6 for ecosystem breadth. If LGPL licensing becomes relevant later, PySide6 is API-compatible and can be swapped without architectural changes.
-
----
+- **Perception portrait adaptation for fully observable domains:** AIM's viewpoint transformation assumes partial observability. Chess is fully observable with a shared board. The perception portrait concept needs fundamental rethinking -- possibly attention over board regions relevant to each piece type rather than viewpoint transformation. This gap cannot be resolved until Phase 4 analysis identifies which existing work (if any) addresses this.
+- **Optimal parameter sharing strategy:** 7 piece types with counts 1/2/2/2/2/2/5 creates an imbalance. Type-based sharing (7 networks) is the most natural choice, but whether to further group similar types (e.g., Chariot + Cannon as "long-range") is an open question that depends on literature findings.
+- **Keyword recall validation:** There is no automated way to measure recall (fraction of relevant papers found). The iteration loop and cross-reference discovery mitigate this, but completeness cannot be guaranteed. Acceptable for a research milestone.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Qt Official Documentation: QThread + signals/slot threading model (doc.qt.io/qt-6/threads-qobject.html) -- canonical threading rules
-- KDAB: "The Eight Rules of Multithreaded Qt" -- PyQt threading best practices
-- Real Python: "Use PyQt's QThread to Prevent Freezing GUIs" -- worker object pattern
-- PythonGUIs: "Multithreading PyQt6 applications with QThreadPool" -- threading patterns
-- Qt Official: QThread subclassing warning (doc.qt.io/qt-6/qthread.html) -- explicit warning against subclassing
-- python-chess architecture: abstract MoveGen and Board separation -- clean interface design inspiration
-- XiangqiEngine API: confirmed from `src/xiangqi/engine/engine.py` (existing v0.1 codebase) -- HIGH confidence
+- Existing codebase analysis: `paper_collect/dblp_search.py`, `paper_collect/dblp_keywords_extract.py`, `paper_collect/dblp_config.json`, `src/xiangqi/rl/env.py` -- direct code reading verified all integration points and capabilities
+- AIM paper (Wu et al. 2025): `papers/` directory -- anchors the domain, provides the active inference portrait framework, identifies the homogeneous-agent limitation
+- DBLP API documentation: https://dblp.org/faq/How+to+use+the+dblp+search+API -- official reference for search capabilities
 
 ### Secondary (MEDIUM confidence)
-- ChessQ (github.com/walker8088/ChessQ) -- active PyQt Xiangqi project, last updated Feb 2025
-- sahinakkaya/chess PyQt6 implementation -- open-source PyQt chess reference
-- Compart.com: Xiangqi Unicode Characters (U+1FA60-U+1FA6D) -- Unicode range confirmed
-- hartwork/xiangqi-setup -- SVG rendering approach for xiangqi boards
-- Medium: "A Clean Architecture for a PyQt GUI Using the MVP Pattern" -- design pattern article
+- MARL agent modeling literature: ScienceDirect, OpenReview, AAAI, NeurIPS proceedings -- identified QTypeMix, RODE, PR2 as key algorithmic references
+- MARL heterogeneous agent literature: identified parameter sharing strategies, credit assignment methods, and role decomposition approaches
+- Systematic review methodology: standard academic practice for literature screening
 
-### Tertiary (LOW-MEDIUM confidence)
-- PyQt6 Python 3.13 compatibility reports (Stack Overflow / forum.qt.io) -- user reports, not official
-- PhysicsKnight MCTS-Minimax -- reference for algorithm structure only
-- game-ai-client PyPI -- generic SDK, not xiangqi-specific
+### Tertiary (LOW confidence)
+- Specific algorithm performance comparisons: benchmark results from MARL papers are domain-specific and may not transfer to the chess domain
+- Observation adaptation alternatives (attention over board regions): inferred from gap analysis, not found in existing literature
 
 ---
-
-*Research completed: 2026-03-23*
+*Research completed: 2026-03-29*
 *Ready for roadmap: yes*
