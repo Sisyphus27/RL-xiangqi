@@ -111,14 +111,14 @@ class XiangqiState:
     @classmethod
     def from_fen(cls, fen: str) -> XiangqiState:
         """Parse a FEN string into a XiangqiState."""
-        board, turn = from_fen(fen)
+        board, turn, halfmove_clock = from_fen(fen)
         king_positions = _find_king_positions(board)
         initial_hash = compute_hash(board, turn)
         return cls(
             board=board,
             turn=turn,
             move_history=[],
-            halfmove_clock=0,
+            halfmove_clock=halfmove_clock,
             zobrist_hash_history=[initial_hash],
             king_positions=king_positions,
         )

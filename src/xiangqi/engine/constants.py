@@ -49,11 +49,12 @@ _PIECE_MAP: dict[str, int] = {
 _REV_PIECE_MAP: dict[int, str] = {v: k for k, v in _PIECE_MAP.items()}
 
 
-def from_fen(fen: str) -> Tuple[np.ndarray, int]:
-    """Parse WXF FEN string to (board, turn).
+def from_fen(fen: str) -> Tuple[np.ndarray, int, int]:
+    """Parse WXF FEN string to (board, turn, halfmove_clock).
 
     Board rows 0-9 map to FEN ranks top-to-bottom (black back rank = row 0).
     Turn: +1=red to move, -1=black to move.
+    halfmove_clock: number of half-moves since last pawn move or capture.
     """
     parts = fen.split()
     ranks_str = parts[0].split('/')
@@ -69,11 +70,22 @@ def from_fen(fen: str) -> Tuple[np.ndarray, int]:
                 c_idx += 1
 
     turn = 1 if parts[1] == 'w' else -1
-    return board, turn
+    if len(parts) > 4:
+        if len(parts[3]) > 0 and parts[3][0].isdigit():
+            # WXF 5-field: pieces/side/castling/halfmove/fullmove (no en passant)
+            # parts[3] = halfmove, parts[4] = fullmove
+            halfmove = int(parts[3])
+        else:
+            # Standard 6-field: pieces/side/castling/en_passant/halfmove/fullmove
+            # parts[4] = halfmove, parts[5] = fullmove
+            halfmove = int(parts[4])
+    else:
+        halfmove = 0
+    return board, turn, halfmove
 
 
-def to_fen(board: np.ndarray, turn: int) -> str:
-    """Serialize board + turn to WXF FEN string."""
+def to_fen(board: np.ndarray, turn: int, halfmove_clock: int = 0) -> str:
+    """Serialize board + turn + halfmove_clock to WXF FEN string."""
     rank_strs = []
     for r in range(ROWS):
         rank = ''
@@ -92,4 +104,4 @@ def to_fen(board: np.ndarray, turn: int) -> str:
         rank_strs.append(rank)
 
     color = 'w' if turn == 1 else 'b'
-    return ' '.join(['/'.join(rank_strs), color, '-', '0', '1'])
+    return ' '.join(['/'.join(rank_strs), color, '-', str(halfmove_clock), '1'])

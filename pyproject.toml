@@ -5,6 +5,7 @@ description = "Xiangqi (Chinese Chess) rule engine"
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=2.0,<3.0",
+    "gymnasium>=1.0,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -14,6 +15,9 @@ dev = [
 # 交叉验证依赖：需要先安装 stockfish 系统库（brew install stockfish / apt install stockfish）
 # 再 pip install pyffish
 pyffish = ["pyffish"]
+
+[project.entry-points."gymnasium.envs"]
+Xiangqi = "xiangqi.rl.env:XiangqiEnv"
 
 [build-system]
 requires = ["hatchling"]

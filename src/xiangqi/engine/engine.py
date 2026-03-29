@@ -205,7 +205,7 @@ class XiangqiEngine:
 
     def to_fen(self) -> str:
         """Serialize current position to WXF FEN string."""
-        return to_fen(self._state.board, self._state.turn)
+        return to_fen(self._state.board, self._state.turn, self._state.halfmove_clock)
 
     # ── Read-only properties ────────────────────────────────────────────────
 

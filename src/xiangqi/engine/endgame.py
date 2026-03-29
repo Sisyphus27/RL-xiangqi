@@ -34,11 +34,12 @@ def get_game_result(state: XiangqiState,
 
     Priority order (per CONTEXT.md):
     1. Threefold repetition (any hash appears 3x in zobrist_hash_history) -> DRAW
-    2. Long check (4+ consecutive checking moves) -> DRAW
-    3. Long chase (4+ consecutive chases of same target by same side) -> chaser loses
-    4. No legal moves + in check -> checkmate -> opponent wins
-    5. No legal moves + not in check -> stalemate (困毙) -> opponent wins
-    6. Otherwise -> IN_PROGRESS
+    2. 50-move rule (halfmove_clock >= 100) -> DRAW
+    3. Long check (4+ consecutive checking moves) -> DRAW
+    4. Long chase (4+ consecutive chases of same target by same side) -> chaser loses
+    5. No legal moves + in check -> checkmate -> opponent wins
+    6. No legal moves + not in check -> stalemate (困毙) -> opponent wins
+    7. Otherwise -> IN_PROGRESS
     """
     _ensure_repetition()
 
@@ -50,17 +51,21 @@ def get_game_result(state: XiangqiState,
     if d is not None:
         return d
 
-    # 2. Long check draw
+    # 2. 50-move rule draw (halfmove_clock >= 100 = 50 consecutive half-moves)
+    if state.halfmove_clock >= 100:
+        return 'DRAW'
+
+    # 3. Long check draw
     d = _check_long_check(state, rep_state)
     if d is not None:
         return d
 
-    # 3. Long chase -> chaser loses
+    # 4. Long chase -> chaser loses
     d = _check_long_chase(state, rep_state)
     if d is not None:
         return d
 
-    # 4. Checkmate / Stalemate
+    # 5. Checkmate / Stalemate
     legal = generate_legal_moves(state)
     if len(legal) == 0:
         # Both checkmate and stalemate are losses for the player to move in Xiangqi

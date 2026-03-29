@@ -27,12 +27,14 @@ class TestGameControllerConnection:
         window = Mock()
         window.statusBar = Mock()
 
-        controller = GameController(
-            engine=engine,
-            ai_player=ai_player,
-            board=board,
-            main_window=window,
-        )
+        # Mock _start_ai_turn during construction to prevent thread leaks
+        with patch.object(GameController, '_start_ai_turn'):
+            controller = GameController(
+                engine=engine,
+                ai_player=ai_player,
+                board=board,
+                main_window=window,
+            )
 
         # Verify board.move_applied.connect was called
         board.move_applied.connect.assert_called_once()
@@ -55,12 +57,15 @@ class TestGameControllerTurnChanged:
         window = Mock()
         window.statusBar = Mock()
 
-        controller = GameController(
-            engine=engine,
-            ai_player=ai_player,
-            board=board,
-            main_window=window,
-        )
+        # Mock _start_ai_turn during construction too -- constructor may call
+        # it if random side assigns human=Black (D-02)
+        with patch.object(GameController, '_start_ai_turn'):
+            controller = GameController(
+                engine=engine,
+                ai_player=ai_player,
+                board=board,
+                main_window=window,
+            )
 
         # Track turn_changed signal
         emitted_turns = []
@@ -71,9 +76,11 @@ class TestGameControllerTurnChanged:
         engine.apply(move)
 
         # Trigger controller's _on_move_applied handler
+        # Mock _start_ai_turn to prevent real QThread spawning (D-02)
         from_sq = move & 0x1FF
         to_sq = (move >> 9) & 0x7F
-        controller._on_move_applied(from_sq, to_sq, 0)
+        with patch.object(controller, '_start_ai_turn'):
+            controller._on_move_applied(from_sq, to_sq, 0)
 
         # Turn should have changed to black (-1)
         assert len(emitted_turns) == 1
@@ -97,28 +104,31 @@ class TestGameControllerAIThinking:
         window = Mock()
         window.statusBar = Mock()
 
-        controller = GameController(
-            engine=engine,
-            ai_player=ai_player,
-            board=board,
-            main_window=window,
-        )
+        # Mock _start_ai_turn during construction too -- constructor may call
+        # it if random side assigns human=Black (D-02)
+        with patch.object(GameController, '_start_ai_turn'):
+            controller = GameController(
+                engine=engine,
+                ai_player=ai_player,
+                board=board,
+                main_window=window,
+            )
 
-        # Track ai_thinking_started signal
-        thinking_started = []
-        controller.ai_thinking_started.connect(lambda: thinking_started.append(True))
+        # Force human to play Red so AI plays Black -- deterministic test
+        controller._human_side = 1
 
         # Apply a red move (making it black's turn)
         move = engine.legal_moves()[0]
         engine.apply(move)
 
         # Trigger controller's _on_move_applied handler
+        # Mock _start_ai_turn to prevent real QThread spawning (D-02)
+        # Verify _start_ai_turn is called (proving AI turn detection works)
         from_sq = move & 0x1FF
         to_sq = (move >> 9) & 0x7F
-        controller._on_move_applied(from_sq, to_sq, 0)
-
-        # ai_thinking_started should have been emitted
-        assert len(thinking_started) == 1
+        with patch.object(controller, '_start_ai_turn') as mock_start:
+            controller._on_move_applied(from_sq, to_sq, 0)
+            mock_start.assert_called_once()
 
 
 class TestGameControllerAILegalGuard:
@@ -139,12 +149,14 @@ class TestGameControllerAILegalGuard:
         window = Mock()
         window.statusBar = Mock()
 
-        controller = GameController(
-            engine=engine,
-            ai_player=ai_player,
-            board=board,
-            main_window=window,
-        )
+        # Mock _start_ai_turn during construction to prevent thread leaks
+        with patch.object(GameController, '_start_ai_turn'):
+            controller = GameController(
+                engine=engine,
+                ai_player=ai_player,
+                board=board,
+                main_window=window,
+            )
 
         # Apply a red move to get to black's turn
         red_move = engine.legal_moves()[0]
@@ -190,7 +202,9 @@ class TestGameControllerGameOver:
         window.statusBar = Mock()
 
         # Mock QMessageBox.information to avoid Qt widget requirement
-        with patch('src.xiangqi.controller.game_controller.QMessageBox.information'):
+        # Mock _start_ai_turn during construction to prevent thread leaks
+        with patch('src.xiangqi.controller.game_controller.QMessageBox.information'), \
+             patch.object(GameController, '_start_ai_turn'):
             controller = GameController(
                 engine=engine,
                 ai_player=ai_player,

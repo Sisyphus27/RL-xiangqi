@@ -45,14 +45,14 @@ class TestStartingFen:
 
     def test_starting_fen_parsed(self):
         """DATA-05: from_fen(STARTING_FEN) produces correct piece layout."""
-        board, turn = from_fen(STARTING_FEN)
+        board, turn, _ = from_fen(STARTING_FEN)
         assert board.shape == (10, 9)
         assert board.dtype == np.int8
         assert turn == 1  # red to move
 
     def test_starting_fen_red_back_rank(self):
         """DATA-05: Red pieces on rank 9 (row 9): CHE CHE, MA MA, XIANG XIANG, SHI SHI, SHUAI."""
-        board, _ = from_fen(STARTING_FEN)
+        board, _, _ = from_fen(STARTING_FEN)
         row9 = board[9, :]
         assert row9[0] == Piece.R_CHE
         assert row9[1] == Piece.R_MA
@@ -66,7 +66,7 @@ class TestStartingFen:
 
     def test_starting_fen_black_back_rank(self):
         """DATA-05: Black pieces on rank 0 (row 0)."""
-        board, _ = from_fen(STARTING_FEN)
+        board, _, _ = from_fen(STARTING_FEN)
         row0 = board[0, :]
         assert row0[0] == Piece.B_CHE
         assert row0[1] == Piece.B_MA
@@ -80,7 +80,7 @@ class TestStartingFen:
 
     def test_starting_fen_pawns(self):
         """DATA-05: 5 red pawns on row 6, 5 black pawns on row 3."""
-        board, _ = from_fen(STARTING_FEN)
+        board, _, _ = from_fen(STARTING_FEN)
         # Red pawns row 6 at columns 0, 2, 4, 6, 8
         assert board[6, 0] == Piece.R_BING
         assert board[6, 2] == Piece.R_BING
@@ -96,11 +96,11 @@ class TestStartingFen:
 
     def test_fen_roundtrip(self):
         """DATA-05: to_fen(from_fen(fen)) == fen (board ranks + color only)."""
-        board, turn = from_fen(STARTING_FEN)
+        board, turn, _ = from_fen(STARTING_FEN)
         roundtrip = to_fen(board, turn)
         # Compare rank strings and color only
         assert roundtrip.split()[0] == STARTING_FEN.split()[0]
         assert roundtrip.split()[1] == 'w'  # turn preserved
         # Also test a custom FEN
-        board2, turn2 = from_fen("rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR b - 0 1")
+        board2, turn2, _ = from_fen("rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR b - 0 1")
         assert turn2 == -1
