@@ -25,8 +25,10 @@
 
 ### Active
 
-- [ ] 异构多智能体架构 + 在线学习 — v1.0
-- [ ] Alpha-Beta / MCTS AI — v1.0
+- [ ] 论文采集脚本优化 — v1.0
+- [ ] 两阶段关键词设计（广泛检索 + 精细抽取） — v1.0
+- [ ] 文献筛选与技术分析 — v1.0
+- [ ] 异构智能体预测协作RL算法设计 — v1.0
 
 ### Out of Scope
 
@@ -47,17 +49,17 @@
 - **LOC**: ~3,030 Python (src/)
 - **Git Range**: v0.1 (2026-03-19) → v0.3 (2026-03-29) — ~290 commits
 
-## Current Milestone: v1.0 Heterogeneous Multi-Agent Training
+## Current Milestone: v1.0 Explore RL for Heterogeneous Agent Predictive Collaboration
 
-**Goal:** Train 7 per-piece-type networks to cooperate without communication
+**Goal:** 研究驱动的里程碑 — 探索、筛选和分析面向异构智能体预测协作的强化学习技术
 
 **Target features:**
-- Per-piece-type policy networks (7 networks)
-- Team reward shaping (shared terminal rewards, cooperation bonuses)
-- Arbitration network for final move selection
-- Alpha-Beta / MCTS AI opponent
+- 论文采集脚本优化（dblp_search.py + dblp_keywords_extract.py）
+- 两阶段关键词设计（广泛检索 + 精细抽取），依赖AIM论文深入讨论
+- 用户手动文献筛选 + 迭代关键词优化
+- 技术分析与异构智能体预测协作RL算法设计
 
-**Start:** TBD
+**Start:** 2026-03-29
 
 ## Milestones
 
@@ -66,7 +68,7 @@
 | v0.1 | Complete | 象棋引擎（纯规则，无UI/RL） |
 | v0.2 | Complete | PyQt6 UI + RandomAI + AI 接口 |
 | v0.3 | Complete | 多智能体Gymnasium RL环境 |
-| v1.0 | — | 异构多智能体协同训练 + Alpha-Beta/MCTS |
+| v1.0 | — | 探索异构智能体预测协作的强化学习技术 |
 
 ## Key Decisions
 
@@ -90,5 +92,22 @@
 | Canonical rotation with negation | -np.rot90(board, k=2) negates piece values; active player always channels 0-6 | v0.3 |
 | WXF FEN 5-field detection | parts[3][0].isdigit() distinguishes WXF from standard 6-field | v0.3 |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-03-29 after v0.3 milestone completion*
+*Last updated: 2026-03-29 — v1.0 milestone started*

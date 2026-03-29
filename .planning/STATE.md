@@ -1,24 +1,24 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.3
-milestone_name: COMPLETE
-status: Milestone archived
-last_updated: "2026-03-29T15:45:00.000Z"
+milestone: v1.0
+milestone_name: Explore RL for Heterogeneous Agent Predictive Collaboration
+status: Defining requirements
+last_updated: "2026-03-29T16:00:00.000Z"
 progress:
-  total_phases: 13
-  completed_phases: 13
-  total_plans: 50
-  completed_plans: 50
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-29 after v0.3 milestone completion)
+See: .planning/PROJECT.md (updated 2026-03-29 — v1.0 milestone started)
 
 **Core value:** 人机对弈时AI能实时学习并持续变强，用户能直观感受到AI棋力随时间提升
-**Current focus:** Planning v1.0 milestone — heterogeneous multi-agent training
+**Current focus:** v1.0 — 探索异构智能体预测协作的强化学习技术
 
 ## Runtime Environment
 
@@ -30,19 +30,10 @@ Install missing packages with `pip install` inside that environment.
 
 ## Current Position
 
-Phase: All v0.3 phases complete
-v0.3 milestone COMPLETE — archived 2026-03-29
-Next: `/gsd:new-milestone` for v1.0
-
-## Phase Context (v0.3 — Complete)
-
-| Phase | Status | Context |
-|-------|--------|---------|
-| 09 | Complete | XiangqiEnv gym.Env core, step(), SyncVectorEnv, 50-move rule |
-| 10 | Complete | AlphaZero board planes observation encoding (16 channels) |
-| 11 | Complete | Per-piece-type action masking API + reward signal fix |
-| 12 | Complete | Self-play E2E validation: 100 random games |
-| 13 | Complete | 7 pre-existing test failures fixed (314 tests green) |
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-29 — Milestone v1.0 started
 
 ## Milestone History
 
@@ -58,4 +49,4 @@ Next: `/gsd:new-milestone` for v1.0
 - §10 Multi-Agent RL: Per-piece-type networks + arbitration architecture
 
 ---
-*Last updated: 2026-03-29 after v0.3 milestone archival*
+*Last updated: 2026-03-29 — v1.0 milestone started*
