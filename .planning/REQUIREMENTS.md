@@ -18,7 +18,6 @@
 - [ ] **ITER-02**: 研究者可以从已纳入论文的参考文献中发现并补充遗漏的相关论文
 
 ---
-
 ## Future Requirements (Deferred)
 
 ### TECH (Technical Analysis) — 后续里程碑
@@ -36,7 +35,6 @@
 - 完整算法规格说明书
 
 ---
-
 ## Out of Scope
 
 | Item | Reason |
@@ -48,20 +46,19 @@
 | 技术分析与综合 | 推迟到后续里程碑 |
 
 ---
-
 ## Traceability
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| LIT-01 | — | — |
-| LIT-02 | — | — |
-| LIT-03 | — | — |
-| LIT-04 | — | — |
-| LIT-05 | — | — |
-| LIT-06 | — | — |
-| LIT-07 | — | — |
-| ITER-01 | — | — |
-| ITER-02 | — | — |
+| LIT-01 | Phase 14 | Pending |
+| LIT-02 | Phase 14 | Pending |
+| LIT-03 | Phase 14 | Pending |
+| LIT-04 | Phase 15 | Pending |
+| LIT-05 | Phase 15 | Pending |
+| LIT-06 | Phase 16 | Pending |
+| LIT-07 | Phase 16 | Pending |
+| ITER-01 | Phase 16 | Pending |
+| ITER-02 | Phase 16 | Pending |
 
 ---
 *Requirements for: RL-Xiangqi v1.0 — Heterogeneous Agent Predictive Collaboration Literature Pipeline*
