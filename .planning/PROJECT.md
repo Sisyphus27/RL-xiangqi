@@ -26,7 +26,7 @@
 ### Active
 
 - [ ] 论文采集脚本优化 — v1.0
-- [ ] 两阶段关键词设计（广泛检索 + 精细抽取） — v1.0
+- [x] 两阶段关键词设计（广泛检索 + 精细抽取） — v1.0, Phase 14
 - [ ] 文献筛选与技术分析 — v1.0
 - [ ] 异构智能体预测协作RL算法设计 — v1.0
 
@@ -110,4 +110,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 — v1.0 milestone started*
+*Last updated: 2026-03-30 — Phase 14 complete (MARL keyword config)*
