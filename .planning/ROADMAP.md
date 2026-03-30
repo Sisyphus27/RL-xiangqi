@@ -114,7 +114,7 @@ Phases execute in numeric order: 14 -> 15 -> 16
 | 11 | v0.3 | 2/2 | Complete | 2026-03-28 |
 | 12 | v0.3 | 1/1 | Complete | 2026-03-28 |
 | 13 | v0.3 | 1/1 | Complete | 2026-03-29 |
-| 14 | 1/1 | Complete   | 2026-03-30 | - |
+| 14 | 1/1 | Complete    | 2026-03-30 | - |
 | 15 | v1.0 | 0/2 | Not started | - |
 | 16 | v1.0 | 0/3 | Not started | - |
 
