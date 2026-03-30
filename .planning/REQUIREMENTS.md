@@ -4,9 +4,9 @@
 
 ### LIT (Literature Collection)
 
-- [ ] **LIT-01**: 研究者可以重新设计 `dblp_config.json` 中的搜索关键词，从超图/交通领域替换为MARL/异构智能体/预测协作领域
-- [ ] **LIT-02**: 研究者可以设计两阶段关键词：阶段1（广泛检索）覆盖MARL核心术语，阶段2（精细抽取）使用嵌套AND/OR逻辑精确筛选
-- [ ] **LIT-03**: 研究者可以添加AAMAS等多智能体相关会议到搜索范围
+- [x] **LIT-01**: 研究者可以重新设计 `dblp_config.json` 中的搜索关键词，从超图/交通领域替换为MARL/异构智能体/预测协作领域
+- [x] **LIT-02**: 研究者可以设计两阶段关键词：阶段1（广泛检索）覆盖MARL核心术语，阶段2（精细抽取）使用嵌套AND/OR逻辑精确筛选
+- [x] **LIT-03**: 研究者可以添加AAMAS等多智能体相关会议到搜索范围
 - [ ] **LIT-04**: 研究者可以运行 `dblp_search.py` 进行广泛检索并生成CSV结果
 - [ ] **LIT-05**: 研究者可以运行 `dblp_keywords_extract.py` 进行精细关键词筛选并生成短名单Excel
 - [ ] **LIT-06**: 研究者可以通过手动筛选短名单论文，记录纳入/排除决策及理由
@@ -50,9 +50,9 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| LIT-01 | Phase 14 | Pending |
-| LIT-02 | Phase 14 | Pending |
-| LIT-03 | Phase 14 | Pending |
+| LIT-01 | Phase 14 | Complete |
+| LIT-02 | Phase 14 | Complete |
+| LIT-03 | Phase 14 | Complete |
 | LIT-04 | Phase 15 | Pending |
 | LIT-05 | Phase 15 | Pending |
 | LIT-06 | Phase 16 | Pending |

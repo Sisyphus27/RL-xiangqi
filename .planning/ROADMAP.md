@@ -48,7 +48,7 @@
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 14: MARL Keyword Design** - Redesign dblp_config.json with two-stage MARL-domain keywords and AAMAS venue
+- [x] **Phase 14: MARL Keyword Design** - Redesign dblp_config.json with two-stage MARL-domain keywords and AAMAS venue (completed 2026-03-30)
 - [ ] **Phase 15: Paper Collection** - Run broad search and refined extraction pipeline to generate shortlist
 - [ ] **Phase 16: Manual Screening & Iteration** - Screen papers, collect full-text, iterate keywords, cross-reference discover
 
@@ -114,7 +114,7 @@ Phases execute in numeric order: 14 -> 15 -> 16
 | 11 | v0.3 | 2/2 | Complete | 2026-03-28 |
 | 12 | v0.3 | 1/1 | Complete | 2026-03-28 |
 | 13 | v0.3 | 1/1 | Complete | 2026-03-29 |
-| 14 | v1.0 | 0/1 | Not started | - |
+| 14 | 1/1 | Complete   | 2026-03-30 | - |
 | 15 | v1.0 | 0/2 | Not started | - |
 | 16 | v1.0 | 0/3 | Not started | - |
 
