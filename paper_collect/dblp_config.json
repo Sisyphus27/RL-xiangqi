@@ -1,0 +1,116 @@
+{
+  "search": {
+    "default_keywords": [
+      "multi-agent reinforcement learning",
+      "multi-agent RL",
+      "MARL",
+      "cooperative multi-agent",
+      "decentralized execution",
+      "CTDE",
+      "heterogeneous agent",
+      "heterogeneous multi-agent",
+      "agent diversity",
+      "asymmetric agents",
+      "type-aware",
+      "role-based",
+      "diverse agent",
+      "teammate modeling",
+      "opponent modeling",
+      "active inference",
+      "Theory of Mind",
+      "belief tracking",
+      "agent modeling",
+      "value decomposition",
+      "credit assignment",
+      "MAPPO",
+      "QMIX",
+      "communication-free",
+      "ad-hoc teamwork",
+      "cooperative coordination"
+    ],
+    "default_venues": [
+      "kdd",
+      "icml",
+      "neurips",
+      "aaai",
+      "ijcai",
+      "iclr",
+      "icde",
+      "sigmod",
+      "vldb",
+      "tkde",
+      "tmc",
+      "www",
+      "cvpr",
+      "acl",
+      "iccv",
+      "pami",
+      "sigir",
+      "tpami",
+      "aamas"
+    ],
+    "start_year": 2024,
+    "end_year": 2026,
+    "max_results": 40000
+  },
+  "api": {
+    "base_url": "https://dblp.org/search/publ/api",
+    "timeout": 10,
+    "retry_total": 5,
+    "retry_backoff": 2.0,
+    "max_attempts": 3,
+    "thread_timeout": 300
+  },
+  "pagination": {
+    "max_per_page": 100,
+    "max_pages": 50,
+    "sleep_time": 2.0,
+    "jitter_min": 0.5,
+    "jitter_max": 1.5,
+    "max_workers": 2,
+    "max_loops": 10
+  },
+  "termination": {
+    "full_hits_limit": 3,
+    "use_full_hits_limit": false,
+    "stop_on_duplicate_page": true,
+    "duplicate_pages_limit": 2,
+    "same_paper_threshold": 2,
+    "min_duplicate_pages": 1
+  },
+  "extract": {
+    "default_csv": "paper_collect/dblp_papers.csv",
+    "default_keywords": [
+      ["multi-agent reinforcement learning", "multi-agent RL", "MARL"],
+      ["cooperative", "collaborative", "coordination"],
+      ["heterogeneous", "diverse", "asymmetric", "type-aware", "role-based", "different action space"],
+      ["teammate modeling", "opponent modeling", "agent modeling", "active inference", "Theory of Mind", "belief"],
+      ["decentralized", "CTDE", "value decomposition", "policy gradient", "credit assignment"],
+      ["game", "board game", "StarCraft", "planning", "scheduling", "robot"]
+    ],
+    "default_match_all": true,
+    "default_title_col": "title",
+    "output_prefix": "dblp_papers_matched",
+    "max_base_len": 50,
+    "max_filename_length": 200,
+    "case_insensitive": true,
+    "strip_accents": false,
+    "return_matches": true
+  },
+  "abstract_apis": {
+    "semantic_scholar": {
+      "base_url": "https://api.semanticscholar.org/graph/v1/paper",
+      "fields": "paperId,title,abstract,authors,year,citationCount,venue",
+      "timeout": 10,
+      "retry_total": 2,
+      "retry_backoff": 0.5,
+      "rate_limit": {
+        "requests_per_5min": 100,
+        "sleep_between_requests": 1.0
+      },
+      "enable_batch": false,
+      "max_workers": 2,
+      "enable": false
+    }
+  }
+}
