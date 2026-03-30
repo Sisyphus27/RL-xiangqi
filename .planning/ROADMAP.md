@@ -63,11 +63,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Researcher can identify the two-stage keyword structure: Stage 1 keywords for broad retrieval, Stage 2 nested AND/OR groups for refined extraction
   3. Researcher can confirm AAMAS is listed among the target venues in dblp_config.json
   4. A test run of dblp_search.py with the new config returns results (volume can be calibrated in Phase 15)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [ ] 14-01: Write MARL keywords into dblp_config.json and validate with DBLP API test
 
 ### Phase 15: Paper Collection
 **Goal**: Researchers have a filtered shortlist of candidate papers ready for manual review
@@ -115,7 +114,7 @@ Phases execute in numeric order: 14 -> 15 -> 16
 | 11 | v0.3 | 2/2 | Complete | 2026-03-28 |
 | 12 | v0.3 | 1/1 | Complete | 2026-03-28 |
 | 13 | v0.3 | 1/1 | Complete | 2026-03-29 |
-| 14 | v1.0 | 0/2 | Not started | - |
+| 14 | v1.0 | 0/1 | Not started | - |
 | 15 | v1.0 | 0/2 | Not started | - |
 | 16 | v1.0 | 0/3 | Not started | - |
 
